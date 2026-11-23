@@ -12,10 +12,31 @@ const drives={
  coordinated:['四轮协调转弯','Coordinated turn','前后轮反相偏转，内外轮各按自身转弯半径滚动。','Front and rear wheels counter-steer. Each speed follows its own turning radius.']
 };
 const comparisons=[
- {motion:'pivot',hardware:'diff_drive',name:['差速 · 自转','Differential · pivot'],title:['同一转动中心','One centre of rotation'],info:['左侧舵轮沿圆周切线滚动。右侧固定轮左右反转，前后轮在转动时存在横向擦滑。','The steerable wheels roll tangent to their circles. The fixed differential wheels counter-rotate on opposite sides and scrub laterally.'],ref:['四轮差速','Differential']},
- {motion:'lateral',hardware:'mecanum',name:['麦轮 · 横移','Mecanum · slide'],title:['同一横移距离','One lateral displacement'],info:['左侧四个舵轮都转到 90°。右侧麦轮的主轮保持朝前，两组对角轮反转，斜辊允许侧移。','All four 4WISD modules steer to 90°. The Mecanum wheels face forward; opposite diagonal speeds and angled rollers produce lateral travel.'],ref:['麦克纳姆','Mecanum']},
- {motion:'front',hardware:'ackermann_front',name:['阿克曼 · 转弯','Ackermann · turn'],title:['同一转弯半径','One turning radius'],info:['两侧内前轮转角均大于外前轮。4WISD 将后轮转角设为零，复现前轮阿克曼底盘的弯道。','On both chassis the inner front wheel turns more sharply. Holding the 4WISD rear wheels straight reproduces the front-steered Ackermann path.'],ref:['前轮阿克曼','Ackermann']}
+ {hardware:'diff_drive',modes:['pivot','pivot'],name:['差速 · 自转','Differential · pivot']},
+ {hardware:'mecanum',modes:['lateral','lateral'],name:['麦轮 · 平移','Mecanum · translation']},
+ {hardware:'ackermann_front',modes:['coordinated','front'],name:['阿克曼 · 转弯','Ackermann · turn']}
 ];
+const hardwareNames={ '4wis':['4WISD','4WISD'],diff_drive:['四轮差速','Differential'],
+ mecanum:['麦克纳姆','Mecanum'],ackermann_front:['前轮阿克曼','Front Ackermann'] };
+const lessons={
+ pivot:{
+  title:['绕车心自转','Pivot about the centre'],info:['两车绕各自中心转过相同角度。观察左右轮的转速符号。','Both chassis rotate about their centres through the same angle. Compare the signs of the wheel speeds.'],
+  a:['每个舵轮沿自己的圆周切线滚动，四个轮心绕车心画圆。','Each module steers tangent to the circle its wheel traces about the centre.'],
+  b:['左右两侧反向驱动。四个轮面始终朝前，转动时轮胎存在侧向擦滑。','The two sides drive in opposite directions. The fixed wheels scrub sideways as the chassis turns.']},
+ lateral:{
+  title:['保持航向横移','Slide with heading fixed'],info:['两车向左平移相同距离。观察轮面朝向和对角轮组的转速。','Both chassis move left by the same distance. Compare wheel headings and the speeds of diagonal pairs.'],
+  a:['四轮平行转到 90°，同速滚动，车头方向保持不变。','All four modules steer to 90° and roll at equal speed while the chassis holds its heading.'],
+  b:['四个主轮朝前，两组对角轮反向转动。斜滚子允许底盘侧移。','The wheels face forward. Opposite diagonal pairs counter-rotate, and the angled rollers allow lateral motion.']},
+ diagonal:{
+  title:['保持航向斜移','Translate diagonally'],info:['两车同时向前、向左移动。车身航向保持不变。','Both chassis travel forward and left while holding the same heading.'],
+  a:['四轮平行偏转约 40°，一起沿斜线滚动。','The modules all steer about 40° and roll together along the diagonal.'],
+  b:['主轮朝向保持不变。前进与横移的轮速叠加，一组对角轮快，另一组慢。','Wheel planes stay fixed. Combining forward and lateral wheel speeds makes one diagonal pair faster than the other.']},
+ coordinated:{
+  title:['四轮转向与前轮转向','Four-wheel vs front steering'],info:['两车的车体前向速度和航向角速度相同。后轮约束不同，车心走出的弧线也不同。','Forward body speed and yaw rate match. The rear-wheel constraints give the chassis centres different arcs.'],
+  a:['前轮向左、后轮向右，四个舵轮同时参与转弯。看后轮的负转角。','Front wheels steer left and rears steer right. All four participate in the turn; look for the negative rear angles.'],
+  b:['后轮转角保持 0°，前轮向左偏转，内前轮的转角更大。','Both rears remain at 0°. The fronts steer left, with the inner wheel turning more sharply.']}
+};
+let motionExport='4wis';
 const translated=[...document.querySelectorAll('[data-en]')].map(el=>[el,el.textContent]);
 function word(zh,en){return state.english?en:zh;}
 function scale(key){return key==='radius'?200:100;}
@@ -30,9 +51,10 @@ for(let i=0;i<2;i++){
  $(id).onchange=e=>{const modes=state.drives.slice();modes[i]=e.target.value;run(modes);};
 }
 for(const item of comparisons){
- const b=document.createElement('button');b.onclick=()=>{$('free').open=false;run([item.motion,item.motion],item.hardware);};$('pairs').append(b);
+ const b=document.createElement('button');b.onclick=()=>{$('free').open=false;run(item.modes,item.hardware);};$('pairs').append(b);
 }
-function run(drives,reference=null){set({drives,reference,time:0,playing:!matchMedia('(prefers-reduced-motion: reduce)').matches});update();}
+for(const mode of ['lateral','diagonal'])$(mode).onclick=()=>run([mode,mode],'mecanum');
+function run(drives,reference=null){motionExport='4wis';set({drives,reference,time:0,playing:!matchMedia('(prefers-reduced-motion: reduce)').matches});update();}
 function switchTab(moving){
  set({tab:moving?'motion':'geometry',az:moving?-Math.PI/2:-1.04,elevation:moving?1.18:.58,time:0,playing:moving&&!matchMedia('(prefers-reduced-motion: reduce)').matches});update();
 }
@@ -48,8 +70,11 @@ $('arms').onchange=e=>{set({arms:Number(e.target.value)});update();};
 $('armX').oninput=e=>{set({[state.arms===1?'singleX':'dualX']:Number(e.target.value)/1000});update();};
 $('spacing').oninput=e=>{set({spacing:Number(e.target.value)/1000});update();};
 $('autoMount').onclick=()=>{set(state.arms===1?{singleX:null}:{dualX:null,spacing:null});update();};
-$('saveBase').onclick=()=>downloadUrdf('4wis');
-$('saveRef').onclick=()=>downloadUrdf(state.reference);
+$('hardware').onchange=e=>{
+ if(state.tab==='geometry')set({geometryHardware:e.target.value});else motionExport=e.target.value;
+ update();
+};
+$('saveBase').onclick=()=>downloadUrdf($('hardware').value);
 $('play').onclick=()=>{set({playing:!state.playing,time:state.time>=4?0:state.time});};
 $('replay').onclick=()=>set({playing:true,time:0});
 $('seek').oninput=e=>set({time:Number(e.target.value),playing:false});
@@ -82,38 +107,46 @@ function update(){
    input.value=Math.round(value*1000);
    document.querySelector('output[for="'+id+'"]').textContent=Number((value*1000).toFixed(1))+' mm';
  }
- $('saveRef').hidden=!(move&&comparison);
- $('mecanumNote').hidden=!(move&&state.reference==='mecanum');
- if(comparison)$('saveRef').textContent=word('下载 ','Download ')+comparison.ref[i]+' URDF';
+ const hardware=move?motionExport:state.geometryHardware;
+ const available=move?(comparison?['4wis',comparison.hardware]:['4wis']):Object.keys(hardwareNames);
+ $('hardware').replaceChildren(...available.map(key=>new Option(hardwareNames[key][i],key)));
+ $('hardware').value=hardware;
+ $('mecanumNote').hidden=hardware!=='mecanum';
+ $('comparisonBar').hidden=!move;
+ $('explanations').hidden=!move;
+ $('translations').hidden=state.reference!=='mecanum';
+ for(const key of ['lateral','diagonal'])$(key).setAttribute('aria-pressed',state.drives[0]===key);
  state.drives.forEach((key,j)=>{
    const sel=$('drive'+j),box=sel.parentElement,ab=j?'B':'A';
    box.querySelector('label').textContent=ab+word(' 车',' · drive');for(const opt of sel.options)opt.textContent=drives[opt.value][i];sel.value=key;box.querySelector('p').textContent=drives[key][2+i];
-   const suffix=j?'b':'a',title=move?(comparison?(j?comparison.ref[i]:'4WISD')+' · '+drives[key][i]:drives[key][i]):j?word('当前 · ','Current · ')+labels[state.profile][i]:word('参照 · 标准底盘','Reference · standard');
+   const suffix=j?'b':'a',title=move?(comparison?(j?hardwareNames[comparison.hardware][i]:'Xmobot · 4WISD'):drives[key][i]):j?word('当前 · ','Current · ')+labels[state.profile][i]:word('参照 · 标准底盘','Reference · standard');
    $('name-'+suffix).textContent=title;$('value-'+suffix).textContent=move?(ab+'  /  '+(j&&comparison?comparison.hardware:'4wis')):info(j?state.dims:profiles.standard);
    document.querySelector('#panel-'+suffix+' .overlay').setAttribute('aria-label',title+word('。拖动或按方向键旋转。','. Drag or use arrow keys to orbit.'));
  });
  [...$('pairs').children].forEach((b,j)=>{b.textContent=comparisons[j].name[i];b.setAttribute('aria-pressed',comparison===comparisons[j]);});
- $('demoTitle').textContent=comparison?comparison.title[i]:word('同底盘自由对照','Free 4WISD comparison');
- $('demoInfo').textContent=comparison?comparison.info[i]:word('两栏均为 4WISD，可分别切换运动。','Both panels use 4WISD. Choose either motion independently.');
- $('modelNote').textContent=move&&comparison?word('左右共用尺寸、起点、车身速度和时间轴。轨迹为理想运动学示意；麦轮斜辊为原理示意。','Both sides share dimensions, starting pose, chassis velocity and time. Paths are kinematic illustrations; Mecanum rollers are schematic.'):word('橙色箭头标出车头。模型尺寸源自 Xacro，运动为理想运动学演示。','The orange chevron marks the front. Geometry follows Xacro; motion is kinematic.');
+ const lesson=comparison?lessons[state.drives[0]]:null;
+ $('demoTitle').textContent=lesson?lesson.title[i]:word('自由对照','Free comparison');
+ $('demoInfo').textContent=lesson?lesson.info[i]:word('分别选择两台 4WISD 的运动，比较同一时刻的位置与航向。','Select a motion for each 4WISD and compare their positions and headings at the same instant.');
+ for(const [j,id] of ['a','b'].entries())$('explain-'+id).textContent=lesson?lesson[id][i]:drives[state.drives[j]][2+i];
+ $('modelNote').textContent=move?word('理想运动学演示。金色尖角标记车头，虚线为起点轮廓。','Ideal kinematics. The gold chevron marks the nose; the dashed outline marks the start.'):word('左右使用相同比例。拖动视图可同步旋转。','Both views use the same scale. Drag to orbit them together.');
  const d=state.dims;
  $('mountInfo').textContent=word('轮心高 ','Axle height ')+Math.round(d.radius*100)+' cm  ·  '+word('底面离地 ','Underbody clearance ')+Math.round(viewer.mounts(d,state.arms).underbody*100)+' cm';
  const installZ=Math.round((viewer.mounts(d,state.arms).deck)*100);
  $('mountInfo').textContent+=word(' · 雷达底面',' · LiDAR base')+(state.arms?word('与臂座',' and arm mount'):'')+' '+installZ+' cm';
- $('armInfo').textContent=state.arms===1?word('雷达在车顶中心，单臂底座位于雷达正后方，两者随车顶一起升降。','LiDAR is centred. The single arm sits directly behind it; both mounts follow the deck height.'):state.arms===2?word('中央雷达、左右双臂，三个底座随车顶同步升降。','The centre LiDAR and symmetric arm bases rise together with the deck.'):word('雷达安装在车顶中心。相机跟随车身前脸。','LiDAR sits at the deck centre. The camera follows the front face.');
  for(let n=0;n<2;n++){
    const info=$('wheel-'+n);info.hidden=!move;
    if(move){
      const wheels=viewer.corners(d).map(([x,y])=>viewer.wheelCommand(state.drives[n],d,x,y,n===1&&comparison?comparison.hardware:'4wis'));
-     info.replaceChildren(...wheels.map((cmd,k)=>{const cell=document.createElement('span');cell.textContent=word(['左前','右前','左后','右后'][k],['FL','FR','RL','RR'][k])+' '+Math.round(cmd.angle*180/Math.PI)+'° / '+cmd.rate.toFixed(1);return cell;}));
+     info.replaceChildren(...wheels.map((cmd,k)=>{const cell=document.createElement('span');cell.style.setProperty('--steer',(-cmd.angle)+'rad');cell.textContent=word(['左前','右前','左后','右后'][k],['FL','FR','RL','RR'][k])+' '+Math.round(cmd.angle*180/Math.PI)+'° / '+cmd.rate.toFixed(1);return cell;}));
    }
  }
  refreshViews();syncTime();
 }
 function openComparison(){
- const chosen={pivot:0,lateral:1,ackermann:2}[location.hash.slice(1)];
+ const chosen={pivot:0,lateral:1,diagonal:1,ackermann:2}[location.hash.slice(1)];
  if(chosen===undefined)return;
  switchTab(true);$('pairs').children[chosen].click();
+ if(location.hash==='#diagonal')$('diagonal').click();
  document.querySelector('.lab').scrollIntoView();
 }
 window.addEventListener('hashchange',openComparison);

@@ -33,7 +33,7 @@ const fs=require('fs');
    await save('saveBase','4wis');
    await page.click('#move');
    for(const [i,drive] of ['diff_drive','mecanum','ackermann_front'].entries()){
-     await page.locator('#pairs button').nth(i).click();await save('saveRef',drive);
+     await page.locator('#pairs button').nth(i).click();await page.selectOption('#hardware',drive);await save('saveBase',drive);
    }
  }
  await page.reload();await page.click('#geo');await page.selectOption('#arms','2');await slide('length',32);await slide('width',25);
@@ -41,7 +41,7 @@ const fs=require('fs');
  await save('saveBase','4wis');
  await page.selectOption('#arms','1');await page.click('#autoMount');await save('saveBase','4wis');
  await page.click('#lang');
- if(await page.locator('#saveBase').innerText()!=='Download 4WISD URDF')throw Error('Language');
+ if(await page.locator('#saveBase').innerText()!=='Export Xmobot URDF')throw Error('Language');
  if(errors.length)throw Error(errors.join('\n'));
  fs.writeFileSync('cases/manifest.json',JSON.stringify(manifest,null,2));
  console.log(manifest.length,'downloads');await browser.close();

@@ -2,19 +2,19 @@
 
 [Open the interactive configurator](https://yeatswang.github.io/xmobot_viz/) · [Xmobot ROS model](https://github.com/YeatsWang/xmobot)
 
-Configure a four-wheel independent steering and driving (4WISD) robot in the browser and export its URDF. The two panels share a clock, scale and starting pose. Select a comparison to see the wheel angles and speeds for the same chassis motion.
+Xmobot is a configurable, extensible mobile robot model. X stands for its many possible configurations. Mobot stands for mobile robot. Use the motion comparison to explore four-wheel independent steering and driving (4WISD), then switch to Mechanical layout to build and export your own Xmobot.
 
-| 4WISD motion | Compare with | What to watch |
+| Compare with | Motion | What to watch |
 | --- | --- | --- |
-| [Pivot about the centre](https://yeatswang.github.io/xmobot_viz/#pivot) | Four-wheel differential | Tangential steering versus opposing left/right wheel speeds |
-| [Translate sideways](https://yeatswang.github.io/xmobot_viz/#lateral) | Mecanum | Steering to 90° versus opposite diagonal wheel speeds |
-| [Follow a turn](https://yeatswang.github.io/xmobot_viz/#ackermann) | Front-steered Ackermann | Inner and outer front angles with both rear wheels straight |
+| Differential | [Pivot](https://yeatswang.github.io/xmobot_viz/#pivot) | Tangential steering on 4WISD and opposite left/right speeds on the differential chassis |
+| Mecanum | [Sideways](https://yeatswang.github.io/xmobot_viz/#lateral) · [Diagonal](https://yeatswang.github.io/xmobot_viz/#diagonal) | Parallel steering on 4WISD and diagonal wheel-speed combinations on Mecanum |
+| Front Ackermann | [Turn](https://yeatswang.github.io/xmobot_viz/#ackermann) | 4WISD counter-steers its rear wheels. Ackermann holds them straight. Forward body speed and yaw rate match, while the chassis centres follow different arcs. |
 
 ## Configure and export
 
 1. Open **Mechanical layout / 机械配置**. Choose a chassis profile or adjust body dimensions, wheel diameter, width, wheelbase and track. The left panel shows the standard chassis at the same scale.
 2. Choose zero, one or two arms. By default the single mount is halfway between the central LiDAR and the rear edge. The controls use millimetres relative to the chassis centre, positive toward the camera. The slider limits keep the circular arm bases on the deck and clear of the LiDAR. Dual arms share one fore/aft offset and an adjustable centre spacing.
-3. Click **Download 4WISD URDF**. In motion comparisons, a second button downloads the reference chassis with the same dimensions and arm layout. Exports include collision geometry, inertia, joints, transmissions and the Gazebo tags from Xmobot. The browser works locally too: clone the repository and open `index.html`. No upload or build step is needed.
+3. Select a drivetrain and click **Export Xmobot URDF**. Mechanical layout previews any of the four drivetrains. In a paired comparison the selector offers the two models on screen. Exports include collision geometry, inertia, joints, transmissions and the Gazebo tags from Xmobot. The browser works locally too: clone the repository and open `index.html`. No upload or build step is needed.
 
 The motion panels show ideal kinematics. The exported Mecanum model uses cylindrical wheel collisions from the ROS package. Physical strafing requires a roller contact model or a dedicated controller. The downloadable URDF describes the robot at its joint origins. The ground, floating base and test wheel commands are supplied by the simulator.
 
@@ -31,6 +31,7 @@ The release check downloads 17 URDFs from the page, covering four drivetrains, a
 ```sh
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium
+node test/motion.cjs
 node test/downloads.cjs
 python -m pip install mujoco==3.17.0 numpy xacro pyyaml
 python test/check_simulation.py cases ../xmobot
