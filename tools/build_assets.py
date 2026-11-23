@@ -36,7 +36,7 @@ def main():
     parser.add_argument("assets", type=Path)
     args = parser.parse_args()
     models, templates = {}, {}
-    for drive in ("4wis", "diff_drive", "mecanum", "ackermann_front"):
+    for drive in ("4wis", "diff_drive", "mecanum", "ackermann_front", "ackermann_rear"):
         templates[drive] = []
         for count in range(3):
             doc = xacro.process_file(str(args.source / "urdf/xmobot.urdf.xacro"),

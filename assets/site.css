@@ -20,13 +20,13 @@ nav{gap:20px}nav a,footer a{font-size:13px}
 .intro{max-width:540px;color:var(--muted);line-height:1.7}
 .lab{background:white;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .labnav{justify-content:space-between;gap:9px;padding:10px 16px;border-bottom:1px solid var(--line)}
-.tabs,.views,.choices,#translations{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.tabs,.views,.choices,#variants{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .tabs button{font-weight:650}.views button{font-size:13px}
 button[aria-pressed=true]{color:white;background:var(--ink);border-color:var(--ink)}
-.views button[aria-pressed=true],#translations button[aria-pressed=true]{color:var(--ink);background:var(--wash);border-color:var(--teal)}
+.views button[aria-pressed=true],#variants button[aria-pressed=true]{color:var(--ink);background:var(--wash);border-color:var(--teal)}
 #comparisonBar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line)}
 #pairs button{padding:7px 14px}#pairs button[aria-pressed=true]{background:var(--teal);border-color:var(--teal)}
-#translations{padding-left:12px;border-left:1px solid var(--line)}#translations button{font-size:13px}
+#variants{padding-left:12px;border-left:1px solid var(--line)}#variants button{font-size:13px}
 .bench{display:grid;grid-template-columns:minmax(0,1fr) 276px}.desk{min-width:0;display:flex;flex-direction:column}
 .twins{display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:clamp(340px,42vh,530px)}
 .viewport{position:relative;isolation:isolate;overflow:hidden;background:var(--paper)}
@@ -60,6 +60,19 @@ footer{gap:18px;padding:16px 0;margin-top:20px;border-top:1px solid var(--line);
 footer span{margin-right:auto}
 @media(max-width:900px){.bench{grid-template-columns:minmax(0,1fr) 230px}.wheel-log span{font-size:10px}.intro{max-width:47%}}
 @media(max-width:760px){.bench{grid-template-columns:1fr}.bench aside{border-left:0;border-top:1px solid var(--line)}.hero{gap:16px}.specs{grid-template-columns:repeat(3,minmax(0,1fr))}.twins{min-height:320px}}
-@media(max-width:520px){.wrap{width:95%}.nav{height:46px}.hero{display:block;padding:18px 2px}.hero h1{font-size:47px}.intro{max-width:none;font-size:13px;margin-top:9px}.labnav,#comparisonBar{padding:7px;gap:5px;flex-wrap:wrap}.labnav button,#pairs button{padding:5px 7px;font-size:13px}#translations{padding:0;border:0}.twins{min-height:275px}.viewport figcaption{top:5px;left:3px}.viewport figcaption strong{font-size:13px}.viewport figcaption span{font-size:10px}.wheel-log{left:2px;right:2px;gap:1px}.wheel-log span{font-size:9px}.wheel-log span::before{width:7px;height:4px;margin-right:2px}#explanations p{padding:7px;font-size:12px}.transport{padding:6px;gap:5px}.specs{grid-template-columns:repeat(2,minmax(0,1fr))}.caption{font-size:12px}}
+@media(max-width:520px){.wrap{width:95%}.nav{height:46px}.hero{display:block;padding:18px 2px}.hero h1{font-size:47px}.intro{max-width:none;font-size:13px;margin-top:9px}.labnav,#comparisonBar{padding:7px;gap:5px;flex-wrap:wrap}.labnav button,#pairs button{padding:5px 7px;font-size:13px}#variants{padding:0;border:0}.twins{min-height:275px}.viewport figcaption{top:5px;left:3px}.viewport figcaption strong{font-size:13px}.viewport figcaption span{font-size:10px}.wheel-log{left:2px;right:2px;gap:1px}.wheel-log span{font-size:9px}.wheel-log span::before{width:7px;height:4px;margin-right:2px}#explanations p{padding:7px;font-size:12px}.transport{padding:6px;gap:5px}.specs{grid-template-columns:repeat(2,minmax(0,1fr))}.caption{font-size:12px}}
 .viewport:has(.wheel-log:not([hidden])) canvas{height:calc(100% - 52px)}
 @media(max-width:520px){.viewport:has(.wheel-log:not([hidden])) canvas{height:calc(100% - 44px)}}
+.course,.sources{border-top:1px solid var(--line);padding:20px 0;margin-top:20px;scroll-margin-top:12px}
+.course-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border:0}
+.course h2,.sources h2{font-size:22px;margin:0 0 8px}
+.course-head button{flex:none}.course p,.sources p{font-size:14px;line-height:1.65}
+.course-params{display:flex;gap:12px 28px;align-items:center;flex-wrap:wrap;background:var(--wash);padding:10px 15px;margin:12px 0;border-radius:6px}
+.course-params label{display:flex;align-items:center;gap:7px;font-size:13px}.course-params output{font-family:var(--mono);font-weight:650}
+.calculations{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:12px}
+.calculations article{background:white;border:1px solid var(--line);border-top:3px solid var(--teal);padding:13px 16px;border-radius:6px}
+.calculations article+article{border-top-color:var(--gold)}.calculations h3{margin:0 0 5px;font-size:16px}
+.calculations p{margin:5px 0}.twist,.worked{color:var(--muted)}.rigid-eq,.equation,.result{font-family:Georgia,serif;font-size:17px!important;overflow-wrap:anywhere}
+.rigid-eq{margin:5px 0}.result{background:var(--wash);padding:5px 8px;border-radius:4px}
+.sources p{margin:8px 0;max-width:100ch}.course-link,#seeEquations{display:inline-block;margin-top:6px;font-size:13px}
+@media(max-width:640px){.calculations{grid-template-columns:1fr}.course-head{display:block}.course-head button{margin-top:7px}.course-params{gap:8px 14px}}

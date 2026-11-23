@@ -305,6 +305,6 @@
     state.time=Math.min(end,state.time+Math.min((ms-last)/1000,.10));
     if(state.time>=end)state.playing=false;draw();window.syncTime?.();
   }last=ms;requestAnimationFrame(tick);}
-  window.viewer={state,set,draw,profiles,available:panels.every(p=>p.renderer),poseAt,wheelCommand,corners,mounts};
+  window.viewer={state,set,draw,profiles,available:panels.every(p=>p.renderer),poseAt,motion,wheelCommand,corners,mounts};
   refresh();new ResizeObserver(draw).observe(document.querySelector('.twins'));draw();requestAnimationFrame(tick);
 })();

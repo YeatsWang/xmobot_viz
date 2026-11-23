@@ -35,6 +35,7 @@ const fs=require('fs');
    for(const [i,drive] of ['diff_drive','mecanum','ackermann_front'].entries()){
      await page.locator('#pairs button').nth(i).click();await page.selectOption('#hardware',drive);await save('saveBase',drive);
    }
+   await page.click('#rear-ackermann');await page.selectOption('#hardware','ackermann_rear');await save('saveBase','ackermann_rear');
  }
  await page.reload();await page.click('#geo');await page.selectOption('#arms','2');await slide('length',32);await slide('width',25);
  await page.click('#autoMount');await slide('spacing',102);await slide('armX',89);

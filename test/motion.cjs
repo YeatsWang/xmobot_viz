@@ -46,6 +46,23 @@ async function main() {
       }
       assert.equal(await page.locator('#wheel-0 span').count(),4);
     }
+    assert.deepEqual(await page.locator('#pairs button').allTextContents(), ['自转','平移','转弯']);
+    await page.click('#mecanum-pivot');
+    assert.equal(await page.evaluate(()=>viewer.state.reference),'mecanum');
+    const speeds=await page.evaluate(()=>viewer.corners(viewer.state.dims).map(([x,y])=>viewer.wheelCommand('pivot',viewer.state.dims,x,y,'mecanum').rate));
+    const spin=.68*(.25+.20)/.08;
+    for(const [i,speed] of speeds.entries())assert(Math.abs(speed-(i%2?spin:-spin))<1e-9);
+    await page.locator('#pairs button').nth(2).click();
+    await page.click('#rear-ackermann');
+    const angles=await page.evaluate(()=>viewer.corners(viewer.state.dims).map(([x,y])=>viewer.wheelCommand('rear',viewer.state.dims,x,y,'ackermann_rear').angle));
+    assert(angles[0]===0 && angles[1]===0 && angles[2]<angles[3] && angles[3]<0);
+    await page.locator('#wheelExample').selectOption({index:2});
+    assert.match(await page.locator('#calc-b .result').innerText(), /-49\.6°/);
+    await page.click('#editGeometry');
+    await page.locator('#radius').fill('20');
+    await page.click('#seeEquations');
+    assert.equal(await page.locator('#calcR').innerText(),'0.1 m');
+    assert.match(await page.locator('#calc-b .result').innerText(), /2.625 rad/);
     await page.locator('#pairs button').nth(1).click();
     await page.click('#diagonal');
     await page.selectOption('#hardware','mecanum');

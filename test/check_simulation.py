@@ -34,7 +34,7 @@ def check(directory, source, case):
     path = str(directory / case["file"])
     equivalent(ET.parse(path).getroot(), ET.fromstring(xml.toxml()))
     direct = mj.MjModel.from_xml_path(path)
-    expect = 4 + {"4wis": 4, "ackermann_front": 2}.get(case["drive"], 0) + 8*arm
+    expect = 4 + {"4wis": 4, "ackermann_front": 2, "ackermann_rear": 2}.get(case["drive"], 0) + 8*arm
     assert direct.nq == expect, (case, direct.nq, expect)
 
     spec = mj.MjSpec.from_file(path)
