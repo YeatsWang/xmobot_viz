@@ -16,7 +16,7 @@ header{border-bottom:1px solid var(--line)}.nav,nav,.brand,.labnav,.strip,.trans
 nav{gap:20px}nav a,footer a{font-size:13px}
 .hero{display:flex;align-items:center;justify-content:space-between;gap:40px;padding:30px 0 25px}
 .hero h1{font:650 clamp(52px,5.2vw,81px)/.98 "Inter",Arial,sans-serif;letter-spacing:-.075em}
-.hero h1 span{color:var(--gold)}.model-name{margin-top:6px;font-weight:650;letter-spacing:.035em}
+.model-name{margin-top:6px;font-weight:650;letter-spacing:.035em}
 .intro{max-width:540px;color:var(--muted);line-height:1.7}
 .lab{background:white;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .labnav{justify-content:space-between;gap:9px;padding:10px 16px;border-bottom:1px solid var(--line)}
