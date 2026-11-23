@@ -9,7 +9,11 @@
   const state = {tab:'motion', geometryHardware:'4wis', profile:'standard', dims:{...standard}, drives:['pivot','pivot'], reference:'diff_drive',
     singleX:null,dualX:null,spacing:null,az:-Math.PI/2,elevation:1.18,arms:0,time:0,playing:!matchMedia('(prefers-reduced-motion: reduce)').matches,manual:false,english:false};
   const end=4, wheelNames=['front_left','front_right','rear_left','rear_right'];
-  const sceneColors=[0x137D82,0xBCA263];
+  // Sidewalls and top panels share a hue. Brass is reserved for steering hardware.
+  const chassisFinishes=[
+    {side:0x216269,top:0x68C5B5},
+    {side:0x536F89,top:0xB3C8DB}
+  ];
   function motion(mode,d) {
     switch(mode){
       case 'straight': return [.24,0,0];
@@ -77,17 +81,17 @@
       try {this.renderer=new T.WebGLRenderer({canvas:el.querySelector('.world'),antialias:true,alpha:false,preserveDrawingBuffer:true});}catch{this.renderer=null;}
       this.scene=new T.Scene();this.scene.background=new T.Color(0xF8F5EE);
       this.camera=new T.OrthographicCamera(-1,1,1,-1,.01,30);this.camera.up.set(0,0,1);this.softwareLight=new T.Vector3(2,-3,4).normalize();
-      this.scene.add(new T.HemisphereLight(0xf1fff9,0x889690,2.1));
-      const sun=new T.DirectionalLight(0xfff1dd,2.7);sun.position.set(2,-3,4);this.scene.add(sun);
+      this.scene.add(new T.HemisphereLight(0xf6fafb,0x9b9e9a,2.05));
+      const sun=new T.DirectionalLight(0xfff8ed,2.45);sun.position.set(2,-3,4);this.scene.add(sun);
       const baseGrid=[],major=[];
       for(let i=-40;i<=40;i++){const a=i/10;const pts=i%5===0?major:baseGrid;pts.push([a,-4,0],[a,4,0],[-4,a,0],[4,a,0]);}
-      this.scene.add(lines(baseGrid,0xCDC9BF,.36),lines(major,0xA4ADA4,.58));
+      this.scene.add(lines(baseGrid,0xD2D1C9,.32),lines(major,0xAEB4AF,.48));
       this.root=new T.Group();this.scene.add(this.root);
       this.shadow=new T.Mesh(new T.PlaneGeometry(1,1),shadowMat);this.root.add(this.shadow);this.shadow.position.z=.001;
       this.model=new T.Group();this.root.add(this.model);this.mode='';
       this.traces=corners(standard).map(()=>{
         const positions=new T.BufferAttribute(new Float32Array(121*3),3),geometry=new T.BufferGeometry();
-        geometry.setAttribute('position',positions);const trace=new T.Line(geometry,new T.LineBasicMaterial({color:index?0x997830:0x137D82}));trace.frustumCulled=false;this.scene.add(trace);return trace;
+        geometry.setAttribute('position',positions);const trace=new T.Line(geometry,new T.LineBasicMaterial({color:index?0x536F89:0x168577}));trace.frustumCulled=false;this.scene.add(trace);return trace;
       });
     }
     prepare(mode,d,hardware) {
@@ -98,22 +102,31 @@
         for(const [name,vs] of Object.entries(data.links)){
           const group=new T.Group();this.nodes[name]=group;
           for(const v of vs){
-            const color=name==='base_link'?sceneColors[this.index]:name.includes('wheel_link')?0x173F43:name.includes('steering')?0xB09855:name.includes('lidar')?0x244D50:name.includes('camera')?0xBCA263:name.includes('finger')?0x45565a:v.shape==='cylinder'?0x567777:0xc7d3ce;
-            const mesh=new T.Mesh(geom(v),mat(color));mesh.position.fromArray(v.xyz);mesh.rotation.set(...v.rpy,'ZYX');group.add(mesh);
+            const finish=chassisFinishes[this.index];
+            let material;
+            if(name==='base_link' && v.shape==='box'){
+              const side=mat(finish.side);
+              // BoxGeometry stores four sidewalls, then the top and bottom faces.
+              material=[side,side,side,side,mat(finish.top),side];
+            }else{
+              const color=name.includes('wheel_link')?0x27313A:name.includes('steering')?0xDEAA50:name.includes('lidar')?0x344451:name.includes('camera')?0x536B76:name.includes('finger')?0x43505B:v.shape==='cylinder'?0x667D86:0xCFD9D8;
+              material=mat(color);
+            }
+            const mesh=new T.Mesh(geom(v),material);mesh.position.fromArray(v.xyz);mesh.rotation.set(...v.rpy,'ZYX');group.add(mesh);
           }
           if(hardware==='mecanum' && name.includes('wheel_link')){
             // Keep the Xacro axle. Add illustrative roller geometry to its simplified wheel.
             group.children[0].scale.set(.79,.79,.91);
             const diagonal=name.startsWith('front_left')||name.startsWith('rear_right')?-1:1;
             for(let k=0;k<10;k++){
-              const phi=2*Math.PI*k/10,roller=new T.Mesh(geom({shape:'sphere',dims:[1]}),mat(k%2?0x254C4E:0x91ABA9));
+              const phi=2*Math.PI*k/10,roller=new T.Mesh(geom({shape:'sphere',dims:[1]}),mat(k%2?0x465665:0xA5B2B7));
               roller.position.set(.068*Math.sin(phi),0,-.068*Math.cos(phi));
               roller.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),new T.Vector3(Math.cos(phi),diagonal,Math.sin(phi)).normalize());
               roller.scale.set(.011,.034,.011);group.add(roller);
             }
           }
           if(name.includes('wheel_link'))for(const side of [-1,1]){
-            const stripe=new T.Mesh(strokeGeo,mat(0xFAF4DE));stripe.position.set(.033,side*.026,0);group.add(stripe);
+            const stripe=new T.Mesh(strokeGeo,mat(0xFAF8EB));stripe.position.set(.033,side*.026,0);group.add(stripe);
           }
         }
         for(const j of data.joints){
@@ -206,7 +219,10 @@
           const normal=b.pt.clone().sub(a.pt).cross(d.pt.clone().sub(a.pt)).normalize();
           if(normal.dot(eye.clone().sub(a.pt))<=0)continue;
           const shade=.64+.44*Math.max(0,normal.dot(this.softwareLight));
-          faces.push({poly:[a.screen,b.screen,d.screen],depth:a.depth+b.depth+d.depth,color:mesh.material.color.clone().multiplyScalar(shade).getStyle()});
+          const material=Array.isArray(mesh.material)
+            ? mesh.material[geo.groups.find(group=>i>=group.start && i<group.start+group.count).materialIndex]
+            : mesh.material;
+          faces.push({poly:[a.screen,b.screen,d.screen],depth:a.depth+b.depth+d.depth,color:material.color.clone().multiplyScalar(shade).getStyle()});
         }
       });
       faces.sort((a,b)=>b.depth-a.depth);
@@ -234,7 +250,7 @@
         for(let i=-18;i<=18;i++){this.line([[i/10,-2,0],[i/10,2,0]],'#DCDAD0');this.line([[-2,i/10,0],[2,i/10,0]],'#DCDAD0');}
         if(!m)this.drawSoftwareModel();
       }
-      const accent=this.index?'#785D27':'#0C666A',z=this.mount.underbody+d.height+.004;
+      const accent=this.index?'#506A82':'#176D66',z=this.mount.underbody+d.height+.004;
       if(m){
         this.line(this.outline([0,0,0],d.length,d.width,.005),'#687A75',1.3,[4,4]);
         if(!this.renderer)for(const [x,y] of corners(d)){
@@ -267,7 +283,9 @@
         if(state.arms===1)this.labelPoint([this.mount.armX,0,z+.01],state.english?'Arm base':'单臂底座',-46,16);
       }
       const tip=d.length*.37;
-      this.line([world(p,tip-.048,.036,z),world(p,tip,0,z),world(p,tip-.048,-.036,z)],'#946D18',4);
+      const nose=[world(p,tip-.048,.036,z),world(p,tip,0,z),world(p,tip-.048,-.036,z)];
+      this.line(nose,'#37424B',5.4);
+      this.line(nose,'#FFD378',2.8);
     }
   }
   const panels=[...document.querySelectorAll('.viewport')].map((el,i)=>new Panel(el,i));

@@ -57,12 +57,14 @@ async function main() {
     const angles=await page.evaluate(()=>viewer.corners(viewer.state.dims).map(([x,y])=>viewer.wheelCommand('rear',viewer.state.dims,x,y,'ackermann_rear').angle));
     assert(angles[0]===0 && angles[1]===0 && angles[2]<angles[3] && angles[3]<0);
     await page.locator('#wheelExample').selectOption({index:2});
-    assert.match(await page.locator('#calc-b .result').innerText(), /-49\.6°/);
+    assert.match(await page.locator('#calc-b .result annotation').textContent(), /-49\.6/);
     await page.click('#editGeometry');
     await page.locator('#radius').fill('20');
     await page.click('#seeEquations');
     assert.equal(await page.locator('#calcR').innerText(),'0.1 m');
-    assert.match(await page.locator('#calc-b .result').innerText(), /2.625 rad/);
+    assert.match(await page.locator('#calc-b .result annotation').textContent(), /2\.625/);
+    assert(await page.locator('#calc-b .equation mfrac').count() > 0);
+    assert.equal(await page.locator('#rigidEquation math').count(), 1);
     await page.locator('#pairs button').nth(1).click();
     await page.click('#diagonal');
     await page.selectOption('#hardware','mecanum');

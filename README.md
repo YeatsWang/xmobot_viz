@@ -14,9 +14,9 @@ Xmobot is a configurable, extensible mobile robot model. X stands for its many p
 
 Open the [worked equations](https://yeatswang.github.io/xmobot_viz/#kinematics) beneath the motion viewer. Choose a wheel to follow the body twist through its wheel-centre velocity, steering angle and signed spin rate. Change the wheelbase, track or wheel radius in Mechanical layout to recalculate both sides.
 
-The 4WISD equations draw on Yizhi Wang, Degang Xu and Yongfang Xie, “Universal Multi-Mode Kinematic Controller for Four-Wheel Independent Steering and Driving Mobile Robots,” CAC 2025, pp. 4491–4496. [DOI](https://doi.org/10.1109/CAC67268.2025.11487174)
+The 4WISD equations draw on Yizhi Wang, Degang Xu and Yongfang Xie, “Universal Multi-Mode Kinematic Controller for Four-Wheel Independent Steering and Driving Mobile Robots,” CAC 2025, pp. 4491–4496. [IEEE Xplore](https://ieeexplore.ieee.org/document/11487174)
 
-For the configurable platform in robotics education, see Yizhi Wang, Minjuan Wang, Degang Xu, John Chi-Kin Lee and Yongfang Xie, “Xmobot: Enabling Rapid Build-and-Train Robotics Education With Agentic AI,” IEEE Transactions on Learning Technologies, vol. 19, pp. 376–387, 2026. [DOI](https://doi.org/10.1109/TLT.2026.3681123) · [BibTeX for both papers](xmobot.bib)
+For the configurable platform in robotics education, see Yizhi Wang, Minjuan Wang, Degang Xu, John Chi-Kin Lee and Yongfang Xie, “Xmobot: Enabling Rapid Build-and-Train Robotics Education With Agentic AI,” IEEE Transactions on Learning Technologies, vol. 19, pp. 376–387, 2026. [IEEE Xplore](https://ieeexplore.ieee.org/document/11475163) · [BibTeX for both papers](xmobot.bib)
 
 ## Configure and export
 

@@ -34,7 +34,7 @@ button[aria-pressed=true]{color:white;background:var(--ink);border-color:var(--i
 .viewport canvas{width:100%;height:100%;position:absolute;inset:0}.overlay{touch-action:none;cursor:grab}
 .viewport figcaption{position:absolute;top:12px;left:12px;right:8px;pointer-events:none;display:grid;justify-items:start;gap:3px}
 .viewport figcaption strong,.viewport figcaption span{background:#f8f5eeed;border-radius:4px;padding:2px 6px}
-.viewport figcaption strong{border-left:3px solid var(--teal);font-size:16px}.viewport:nth-child(2) figcaption strong{border-color:var(--gold)}
+.viewport figcaption strong{border-left:3px solid var(--teal);font-size:16px}.viewport:nth-child(2) figcaption strong{border-color:#586F87}
 .viewport figcaption span,.range output,#clock{font:12px/1.4 var(--mono);font-variant-numeric:tabular-nums}
 .wheel-log{position:absolute;bottom:6px;left:8px;right:8px;display:grid;grid-template-columns:1fr 1fr;gap:2px;text-align:center;pointer-events:none}
 .wheel-log span{background:#ffffffed;border:1px solid var(--line);border-radius:4px;padding:3px 1px;font:12px/1.45 var(--mono);white-space:nowrap}
@@ -71,8 +71,24 @@ footer span{margin-right:auto}
 .course-params label{display:flex;align-items:center;gap:7px;font-size:13px}.course-params output{font-family:var(--mono);font-weight:650}
 .calculations{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:12px}
 .calculations article{background:white;border:1px solid var(--line);border-top:3px solid var(--teal);padding:13px 16px;border-radius:6px}
-.calculations article+article{border-top-color:var(--gold)}.calculations h3{margin:0 0 5px;font-size:16px}
-.calculations p{margin:5px 0}.twist,.worked{color:var(--muted)}.rigid-eq,.equation,.result{font-family:Georgia,serif;font-size:17px!important;overflow-wrap:anywhere}
-.rigid-eq{margin:5px 0}.result{background:var(--wash);padding:5px 8px;border-radius:4px}
+.calculations article+article{border-top-color:#586F87}.calculations h3{margin:0 0 5px;font-size:16px}
+.calculations p{margin:8px 0}
+.course .katex-display{margin:0;padding:.35em 0;text-align:left;overflow-x:auto;overflow-y:hidden}
+.course .katex-display>.katex{text-align:left}
+.course .equation,.course .given,.course .worked,.course .result,.course #wheelPosition,.course .rigid-eq{min-width:0;font-size:16px}
+.course .given,.course .worked{font-size:14px;color:var(--muted)}
+.course .given{border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:10px}
+.course .rigid-eq{margin:6px 0 10px;padding:5px 14px;border-left:3px solid var(--teal);background:var(--wash)}
+.course #wheelPosition{margin-top:7px}
+.course .result{background:var(--wash);border-radius:4px;margin-top:10px;padding:3px 10px}
 .sources p{margin:8px 0;max-width:100ch}.course-link,#seeEquations{display:inline-block;margin-top:6px;font-size:13px}
 @media(max-width:640px){.calculations{grid-template-columns:1fr}.course-head{display:block}.course-head button{margin-top:7px}.course-params{gap:8px 14px}}
+@media(max-width:520px){.course .equation,.course .result,.course .rigid-eq,.course #wheelPosition{font-size:14px}.course .rigid-eq{padding-left:7px}}
+
+@media(max-width:360px){
+  .course .rigid-eq{font-size:12.5px;padding-right:4px}
+  .course-head,.calculations article{min-width:0}
+  .calculations article{padding:10px}
+  .sources p{overflow-wrap:anywhere}
+  footer{flex-wrap:wrap}
+}
