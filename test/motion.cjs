@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const {pathToFileURL} = require('node:url');
 const {chromium} = require('playwright');
+const {checkEquations} = require('./equations.cjs');
 
 async function main() {
   const browser = await chromium.launch({executablePath:process.env.CHROME_BIN || undefined});
@@ -81,6 +82,7 @@ async function main() {
     await page.click('#move');
     await page.locator('#pairs button').nth(2).click();
     assert(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth));
+    await checkEquations(page);
     assert.deepEqual(errors,[]);
     console.log('Turning geometry, Mecanum translation, differential pivot, export, mobile and language passed.');
   } finally { await browser.close(); }

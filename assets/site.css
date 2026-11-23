@@ -45,7 +45,7 @@ button[aria-pressed=true]{color:white;background:var(--ink);border-color:var(--i
 .strip{justify-content:space-between;font-size:13px}.transport button{font-size:13px}
 .transport input{flex:1;min-width:30px}input[type=range]{accent-color:var(--teal)}
 .bench aside{padding:16px;border-left:1px solid var(--line)}aside h2{font-size:18px;line-height:1.35;margin-bottom:7px}
-.help,.wheel-key,.drive-control p,.caption{font-size:13px;color:var(--muted);line-height:1.55}
+.help,.wheel-key,.caption{font-size:13px;color:var(--muted);line-height:1.55}
 .wheel-key,.legend,details{margin:11px 0}details{font-size:13px}summary{font-weight:650}
 .legend{display:flex;gap:12px;font-size:12px;color:var(--muted)}.legend span:before{content:"";display:inline-block;width:17px;border-top:2px solid var(--teal);margin:0 5px 2px 0}.legend span+span:before{border-top:2px dashed var(--muted)}
 .drive-control{display:grid;gap:4px;margin:9px 0}.drive-control label{font-weight:650}

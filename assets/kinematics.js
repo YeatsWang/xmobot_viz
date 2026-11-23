@@ -52,51 +52,51 @@ function renderKinematics(state, names) {
     equation(tex`\begin{aligned}
       (v_x,v_y)&=(${fmt(vx)},\,${fmt(vy)})\,${speedUnit}\\
       \omega_z&=${fmt(omega)}\,${spinUnit}\\
-      (u_i,w_i)&=(${fmt(u)},\,${fmt(w)})\,${speedUnit}
+      (u_i,w_i)&\approx(${fmt(u)},\,${fmt(w)})\,${speedUnit}
       \end{aligned}`, 'given');
     if (hardware === 'mecanum') {
-      line('p', t('45° 滚子为 X 型排列。左前、右后取正号，另外两轮取负号。滚子允许侧移，主轮转向角始终为零。',
-        'For 45° rollers in an X layout, the roller sign is positive at front left and rear right and negative at the other corners. The wheel planes stay fixed.'));
+      line('p', t('X 型 45° 滚子：左前、右后取 σᵢ = +1，右前、左后取 σᵢ = −1。',
+        'For 45° rollers in an X layout, σᵢ is +1 at front left and rear right, and −1 at front right and rear left.'));
       equation(tex`\delta_i=0,\qquad \Omega_i=\frac{u_i-\sigma_i w_i}{r}`);
-      equation(tex`\begin{aligned}\sigma_i&=${Math.sign(x*y)}\\ \Omega_i&=\frac{${fmt(u)}-(${Math.sign(x*y)})(${fmt(w)})}{${fmt(d.radius)}}\end{aligned}`, 'worked');
+      equation(tex`\begin{aligned}\sigma_i&=${Math.sign(x*y)}\\ \Omega_i&\approx\frac{${fmt(u)}-(${Math.sign(x*y)})(${fmt(w)})}{${fmt(d.radius)}}\,${spinUnit}\end{aligned}`, 'worked');
     } else if (hardware === 'diff_drive') {
-      line('p', t('把轮心速度投影到固定轮的前向。正向自转时，左轮后滚、右轮前滚；轮心的侧向分量由擦滑承担。',
-        'Project wheel-centre velocity onto the fixed wheel plane. In a positive pivot the left wheels roll backward and the right wheels forward. Lateral scrub accommodates the remaining component.'));
+      line('p', t('固定轮沿车身纵向滚动，横向分量由轮胎擦滑承担。',
+        'Fixed wheels roll along the chassis x-axis. Lateral velocity at the wheel centre causes tyre scrub.'));
       equation(tex`\delta_i=0,\qquad \Omega_i=\frac{v_x-\omega_z y_i}{r}`);
-      equation(tex`\Omega_i=\frac{${fmt(u)}}{${fmt(d.radius)}}\,${spinUnit}`, 'worked');
+      equation(tex`\Omega_i\approx\frac{${fmt(u)}}{${fmt(d.radius)}}\,${spinUnit}`, 'worked');
     } else {
       if (mode === 'front' || mode === 'rear') {
         const front = mode === 'front';
         line('p', front
-          ? t('后轴固定。左转时，为使后轮处的横向速度为零，车心速度带有向左的分量。','The rear axle is fixed. For this left turn, zero lateral velocity at the rear wheels requires a leftward component at the centre.')
-          : t('前轴固定。左转时，为使前轮处的横向速度为零，车心速度带有向右的分量。','The front axle is fixed. For this left turn, zero lateral velocity at the front wheels requires a rightward component at the centre.'));
+          ? t('后轮横向速度为零，由此确定车心侧向速度。','Zero lateral velocity at the rear wheels sets the lateral speed of the chassis centre.')
+          : t('前轮横向速度为零，由此确定车心侧向速度。','Zero lateral velocity at the front wheels sets the lateral speed of the chassis centre.'));
         const sign = front ? '' : '-';
         const fixedAxle = front ? 'rear' : 'front', steeredAxle = front ? 'front' : 'rear';
         equation(tex`v_y=${sign}\frac{\omega_z L}{2},\qquad\delta_{\mathrm{${fixedAxle}}}=0`);
         equation(tex`\delta_{\mathrm{${steeredAxle}},i}=\operatorname{atan2}\!\left(${sign}\omega_z L,\;v_x-\omega_z y_i\right)`);
       } else {
-        line('p', t('让轮面沿轮心速度方向滚动。若初算转角超过 ±90°，舵轮取等效反向角度，同时反转驱动轮。',
-          'Align the wheel plane with the wheel-centre velocity. If the raw angle exceeds ±90°, choose the equivalent opposite heading and reverse the wheel.'));
+        line('p', t('轮面沿轮心速度方向滚动。若初算转角超出 ±90°，转角加减 180°，轮速反号。',
+        'Align the wheel with its velocity. For angles outside ±90°, shift the angle by 180° and reverse the spin.'));
         equation(tex`\delta_{\mathrm{raw}}=\operatorname{atan2}(w_i,u_i)`);
         if (mode === 'pivot') {
-          line('p', t('自转时，每个轮心沿半径为 ρ 的圆周运动。航向角速度相同时，增大轮距会提高所需的轮速。',
-            'In a centre pivot each wheel travels on a circle of radius ρ. At the same yaw rate a wider track requires faster wheels.'));
+          line('p', t('ρ 为车心到轮心的距离。',
+        'ρ is the distance from chassis centre to wheel centre.'));
           equation(tex`\rho=\sqrt{\left(\frac{L}{2}\right)^2+\left(\frac{W}{2}\right)^2},\quad
              |\Omega_i|=\frac{|\omega_z|\rho}{r}`);
         } else if (omega === 0) {
-          line('p', t('平移时航向不变，四个轮心速度相同。增大轮半径，同样车速所需的轮速会降低。',
-            'During translation all four wheel centres share the same velocity. A larger wheel needs a lower spin rate for the same chassis speed.'));
+          line('p', t('平移时四个轮心速度相同。',
+        'In translation all wheel centres have the same velocity.'));
           equation(tex`\omega_z=0,\qquad |\Omega_i|=\frac{\sqrt{v_x^2+v_y^2}}{r}`);
         } else if (mode === 'coordinated') {
-          line('p', t('同侧前后轮的纵向坐标互为相反数。车心侧向速度为零时，它们的转角大小相等、方向相反。',
-            'The front and rear wheels on each side have opposite longitudinal coordinates. With zero lateral speed at the centre, their steering angles are equal and opposite.'));
+          line('p', t('同侧前后轮关于车身横轴对称。',
+        'The front and rear wheels on each side are symmetric about the chassis y-axis.'));
           equation(tex`v_y=0,\qquad\delta_{\mathrm{rear}}=-\delta_{\mathrm{front}}`);
         }
       }
       equation(tex`\Omega_i=\frac{u_i\cos\delta_i+w_i\sin\delta_i}{r}`);
-      equation(tex`r\Omega_i=${fmt(wheel.speed)}\,${speedUnit}`, 'worked');
+      equation(tex`r\Omega_i\approx ${fmt(wheel.speed)}\,${speedUnit}`, 'worked');
     }
-    equation(tex`\delta_i=${Number((wheel.angle*180/Math.PI).toFixed(1))}^{\circ},\qquad
-      \Omega_i=${fmt(wheel.rate)}\,${spinUnit}`, 'result');
+    equation(tex`\delta_i\approx ${Number((wheel.angle*180/Math.PI).toFixed(1))}^{\circ},\qquad
+      \Omega_i\approx ${fmt(wheel.rate)}\,${spinUnit}`, 'result');
   }
 }

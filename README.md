@@ -4,7 +4,7 @@
 
 Xmobot is a configurable, extensible mobile robot model. X stands for its many possible configurations. Mobot stands for mobile robot. Use the motion comparison to explore four-wheel independent steering and driving (4WISD), then switch to Mechanical layout to build and export your own Xmobot.
 
-| Motion | Compare with | What to watch |
+| Motion | Compare with | Wheel behaviour |
 | --- | --- | --- |
 | Pivot | [Differential](https://yeatswang.github.io/xmobot_viz/#pivot) · [Mecanum](https://yeatswang.github.io/xmobot_viz/#mecanum-pivot) | Four steered wheels follow tangents. Fixed wheels use opposing side speeds, with tyre scrub or angled rollers accommodating lateral wheel-centre velocity. |
 | Translate | Mecanum · [Sideways](https://yeatswang.github.io/xmobot_viz/#lateral) · [Diagonal](https://yeatswang.github.io/xmobot_viz/#diagonal) | Parallel steering on 4WISD and diagonal wheel-speed combinations on Mecanum. |
@@ -24,7 +24,7 @@ For the configurable platform in robotics education, see Yizhi Wang, Minjuan Wan
 2. Choose zero, one or two arms. By default the single mount is halfway between the central LiDAR and the rear edge. The controls use millimetres relative to the chassis centre, positive toward the camera. The slider limits keep the circular arm bases on the deck and clear of the LiDAR. Dual arms share one fore/aft offset and an adjustable centre spacing.
 3. Select a drivetrain and click **Export Xmobot URDF**. Mechanical layout previews any of the five drivetrains. In a paired comparison the selector offers the two models on screen. Exports include collision geometry, inertia, joints, transmissions and the Gazebo tags from Xmobot. The browser works locally too: clone the repository and open `index.html`. No upload or build step is needed.
 
-The motion panels show ideal kinematics. The exported Mecanum model uses cylindrical wheel collisions from the ROS package. Physical strafing requires a roller contact model or a dedicated controller. The downloadable URDF describes the robot at its joint origins. The ground, floating base and test wheel commands are supplied by the simulator.
+The motion panels show ideal kinematics. The exported Mecanum model uses cylindrical wheel collisions from the ROS package. Physical strafing requires roller contacts or equivalent lateral forces. The downloadable URDF describes the robot at its joint origins. The ground, floating base and test wheel commands are supplied by the simulator.
 
 ## Rebuild and check
 

@@ -27,31 +27,34 @@ const scenarios={
 let activeScenario='pivot';
 const hardwareNames={ '4wis':['4WISD','4WISD'],diff_drive:['四轮差速','Differential'],
  mecanum:['麦克纳姆','Mecanum'],ackermann_front:['前轮阿克曼','Front Ackermann'],ackermann_rear:['后轮阿克曼','Rear Ackermann'] };
-const lessons={
- pivot:{
-  title:['绕车心自转','Pivot about the centre'],info:['两车绕各自中心转过相同角度。观察左右轮的转速符号。','Both chassis rotate about their centres through the same angle. Compare the signs of the wheel speeds.'],
-  a:['每个舵轮沿自己的圆周切线滚动，四个轮心绕车心画圆。','Each module steers tangent to the circle its wheel traces about the centre.'],
-  b:['左右两侧反向驱动。四个轮面始终朝前，转动时轮胎存在侧向擦滑。','The two sides drive in opposite directions. The fixed wheels scrub sideways as the chassis turns.']},
- lateral:{
-  title:['保持航向横移','Slide with heading fixed'],info:['两车向左平移相同距离。观察轮面朝向和对角轮组的转速。','Both chassis move left by the same distance. Compare wheel headings and the speeds of diagonal pairs.'],
-  a:['四轮平行转到 90°，同速滚动，车头方向保持不变。','All four modules steer to 90° and roll at equal speed while the chassis holds its heading.'],
-  b:['四个主轮朝前，两组对角轮反向转动。斜滚子允许底盘侧移。','The wheels face forward. Opposite diagonal pairs counter-rotate, and the angled rollers allow lateral motion.']},
- diagonal:{
-  title:['保持航向斜移','Translate diagonally'],info:['两车同时向前、向左移动。车身航向保持不变。','Both chassis travel forward and left while holding the same heading.'],
-  a:['四轮平行偏转约 40°，一起沿斜线滚动。','The modules all steer about 40° and roll together along the diagonal.'],
-  b:['主轮朝向保持不变。前进与横移的轮速叠加，一组对角轮快，另一组慢。','Wheel planes stay fixed. Combining forward and lateral wheel speeds makes one diagonal pair faster than the other.']},
- coordinated:{
-  title:['四轮转向与前轮转向','Four-wheel vs front steering'],info:['两车的车体前向速度和航向角速度相同。后轮约束不同，车心走出的弧线也不同。','Forward body speed and yaw rate match. The rear-wheel constraints give the chassis centres different arcs.'],
-  a:['前轮向左、后轮向右，四个舵轮同时参与转弯。看后轮的负转角。','Front wheels steer left and rears steer right. All four participate in the turn; look for the negative rear angles.'],
-  b:['后轮转角保持 0°，前轮向左偏转，内前轮的转角更大。','Both rears remain at 0°. The fronts steer left, with the inner wheel turning more sharply.']}
+const turnLesson={
+ title:['左转','Left turn'],
+ info:['两车前向速度与航向角速度相同，车心轨迹随转向方式而变。','Forward speed and yaw rate match. The steering geometry determines each centre path.'],
+ a:['前轮向左、后轮向右，同侧前后轮转角大小相等。','Fronts steer left and rears steer right, by equal angles on each side.']
 };
-lessons['mecanum-pivot']={...lessons.pivot,
- b:['左侧两轮反转，右侧两轮正转。斜滚子允许轮心沿切线移动，四个主轮保持 0° 转角。','The left pair rolls backward and the right pair forward. Angled rollers accommodate tangential motion while wheel steering stays at 0°.']};
-lessons.ackermann=lessons.coordinated;
-lessons['rear-ackermann']={...lessons.coordinated,
- title:['四轮转向与后轮转向','Four-wheel vs rear steering'],
- info:['两车的前向速度和航向角速度相同。右车前轴固定，观察后轴向哪一侧偏转。','Both chassis share forward speed and yaw rate. Watch the rear steering direction when the front axle is fixed.'],
- b:['前轮保持 0°，两个后轮向右偏转，车头向左转。内后轮转角的绝对值更大。','Front wheels stay at 0°. The rears steer right to turn the nose left. The inner rear has the larger steering magnitude.']};
+const pivotLesson={
+ title:['绕车心自转','Centre pivot'],
+ info:['车心位置不变，两车以相同角速度左转。','Both chassis rotate anticlockwise in place at the same yaw rate.'],
+ a:['四个舵轮沿各自圆形轨迹的切线滚动。','All four wheels steer tangent to their circular paths.']
+};
+const lessons={
+ pivot:{...pivotLesson,
+  b:['左轮后滚、右轮前滚，固定轮在转动中侧向擦滑。','Left wheels roll backward and right wheels forward, with lateral tyre scrub.']},
+ 'mecanum-pivot':{...pivotLesson,
+  b:['左轮后滚、右轮前滚，斜滚子允许轮心侧向运动。','Left wheels roll backward and right wheels forward, with lateral motion at the rollers.']},
+ lateral:{
+  title:['横移','Sideways translation'],info:['车头朝向不变，两车以相同速度向左移动。','Both chassis move left at the same speed and keep their heading.'],
+  a:['四个舵轮向左偏转 90°，同速滚动。','All four wheels steer 90° left and roll at equal speed.'],
+  b:['四个主轮朝前，两组对角轮等速反转。','All four wheels face forward. The diagonal pairs spin at equal speeds in opposite directions.']},
+ diagonal:{
+  title:['斜移','Diagonal translation'],info:['车头朝向不变，两车以相同速度向左前方移动。','Both chassis move forward and left at the same speed and keep their heading.'],
+  a:['四个舵轮向左偏转约 40°，同速滚动。','All four wheels steer about 40° left and roll at equal speed.'],
+  b:['四个主轮朝前，右前和左后轮快于另一对角轮组。','All four wheels face forward. The front-right and rear-left wheels spin faster than the other pair.']},
+ ackermann:{...turnLesson,
+  b:['前轮向左、后轮保持 0°，内前轮转角更大。','Fronts steer left and rears stay at 0°. The inner front wheel steers more sharply.']},
+ 'rear-ackermann':{...turnLesson,
+  b:['前轮保持 0°、后轮向右，内后轮偏转幅度更大。','Fronts stay at 0° and rears steer right. The inner rear wheel steers more sharply.']}
+};
 let motionExport='4wis';
 const translated=[...document.querySelectorAll('[data-en]')].map(el=>[el,el.textContent]);
 function word(zh,en){return state.english?en:zh;}
@@ -61,7 +64,7 @@ function chooseProfile(key){set({dims:{...profiles[key]},profile:key});update();
 for(const key of Object.keys(profiles)){const b=document.createElement('button');b.dataset.key=key;b.onclick=()=>chooseProfile(key);$('presets').append(b);}
 for(let i=0;i<2;i++){
  const box=document.createElement('div');box.className='drive-control';
- const id='drive'+i;box.innerHTML='<label for="'+id+'"></label><select id="'+id+'"></select><p></p>';
+ const id='drive'+i;box.innerHTML='<label for="'+id+'"></label><select id="'+id+'"></select>';
  $('driveSelects').append(box);
  for(const key of Object.keys(drives)){const option=document.createElement('option');option.value=key;$(id).append(option);}
  $(id).onchange=e=>{const modes=state.drives.slice();modes[i]=e.target.value;run(modes);};
@@ -160,7 +163,7 @@ function update(){
  }
  state.drives.forEach((key,j)=>{
    const sel=$('drive'+j),box=sel.parentElement,ab=j?'B':'A';
-   box.querySelector('label').textContent=ab+word(' 车',' · drive');for(const opt of sel.options)opt.textContent=drives[opt.value][i];sel.value=key;box.querySelector('p').textContent=drives[key][2+i];
+   box.querySelector('label').textContent=ab+word(' 车',' · drive');for(const opt of sel.options)opt.textContent=drives[opt.value][i];sel.value=key;
    const suffix=j?'b':'a',title=move?(comparison?(j?hardwareNames[comparison.hardware][i]:'Xmobot · 4WISD'):drives[key][i]):j?word('当前 · ','Current · ')+labels[state.profile][i]:word('参照 · 标准底盘','Reference · standard');
    $('name-'+suffix).textContent=title;$('value-'+suffix).textContent=move?(ab+'  /  '+(j&&comparison?comparison.hardware:'4wis')):info(j?state.dims:profiles.standard);
    document.querySelector('#panel-'+suffix+' .overlay').setAttribute('aria-label',title+word('。拖动或按方向键旋转。','. Drag or use arrow keys to orbit.'));
@@ -170,9 +173,9 @@ function update(){
  $('demoTitle').textContent=lesson?lesson.title[i]:word('自由对照','Free comparison');
  $('demoInfo').textContent=lesson?lesson.info[i]:word('分别选择两台 4WISD 的运动，比较同一时刻的位置与航向。','Select a motion for each 4WISD and compare their positions and headings at the same instant.');
  for(const [j,id] of ['a','b'].entries())$('explain-'+id).textContent=lesson?lesson[id][i]:drives[state.drives[j]][2+i];
- $('modelNote').textContent=move?word('理想运动学演示。金色尖角标记车头，虚线为起点轮廓。','Ideal kinematics. The gold chevron marks the nose; the dashed outline marks the start.'):word('左右使用相同比例。拖动视图可同步旋转。','Both views use the same scale. Drag to orbit them together.');
+ $('modelNote').hidden=!move;
  const d=state.dims;
- $('mountInfo').textContent=word('轮心高 ','Axle height ')+Math.round(d.radius*100)+' cm  ·  '+word('底面离地 ','Underbody clearance ')+Math.round(viewer.mounts(d,state.arms).underbody*100)+' cm';
+ $('mountInfo').textContent=word('轮心高 ','Axle height ')+Number((d.radius*100).toFixed(1))+' cm  ·  '+word('底面离地 ','Underbody clearance ')+Math.round(viewer.mounts(d,state.arms).underbody*100)+' cm';
  const installZ=Math.round((viewer.mounts(d,state.arms).deck)*100);
  $('mountInfo').textContent+=word(' · 雷达底面',' · LiDAR base')+(state.arms?word('与臂座',' and arm mount'):'')+' '+installZ+' cm';
  for(let n=0;n<2;n++){
@@ -187,6 +190,9 @@ function update(){
 }
 function openComparison(){
  const key=location.hash.slice(1);
+ if(key==='geometry'){
+   switchTab(false);document.querySelector('.lab').scrollIntoView();return;
+ }
  if(!Object.hasOwn(scenarios,key))return;
  switchTab(true);selectScenario(key);
  document.querySelector('.lab').scrollIntoView();
