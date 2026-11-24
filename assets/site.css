@@ -117,3 +117,6 @@ footer span{margin-right:auto}
 
 @media(min-width:761px){.bench:has(.route-view){grid-template-columns:minmax(0,1fr) clamp(285px,27vw,335px)}}
 #lapExplanation{grid-column:1/-1;margin-top:6px}
+
+#routeShape{max-width:100%;font-size:14px;margin:3px 0 6px}
+@media(max-width:760px){#routeShape{grid-column:2;grid-row:2}#lapMap{grid-row:1/5}}

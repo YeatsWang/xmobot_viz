@@ -250,8 +250,13 @@
       cam.position.set(target[0]+eye*Math.cos(e)*Math.cos(a),target[1]+eye*Math.cos(e)*Math.sin(a),target[2]+eye*Math.sin(e));cam.lookAt(...target);cam.updateMatrixWorld();
       const frame=routeIndex===null?null:XmobotRoute.frames[routeIndex];
       const m=state.tab!=='geometry', t=m?state.time:0, d=this.d,p=frame?frame.p:m?poseAt(this.mode,d,t):[0,0,0];
-      if(frame && !this.routeGraphics && this.renderer){
-        this.routeGraphics=XmobotRoute.graphics();this.scene.add(this.routeGraphics.group);
+      if(frame && this.renderer && this.routeOwner!==XmobotRoute){
+        this.routeScenes??=new Map();
+        if(this.routeGraphics)this.routeGraphics.group.visible=false;
+        if(!this.routeScenes.has(XmobotRoute)){
+          const graphics=XmobotRoute.graphics();this.scene.add(graphics.group);this.routeScenes.set(XmobotRoute,graphics);
+        }
+        this.routeGraphics=this.routeScenes.get(XmobotRoute);this.routeOwner=XmobotRoute;
       }
       if(this.routeGraphics){
         this.routeGraphics.group.visible=!!frame;
@@ -269,7 +274,7 @@
       }
       const accent=this.index?'#506A82':'#176D66',z=this.mount.underbody+d.height+.004;
       if(m){
-        this.line(this.outline([0,0,0],d.length,d.width,.005),'#687A75',1.3,[4,4]);
+        this.line(this.outline(frame?XmobotRoute.frames[0].p:[0,0,0],d.length,d.width,.005),'#687A75',1.3,[4,4]);
         if(!this.renderer && frame)XmobotRoute.software(this,routeIndex);
         if(!this.renderer && !frame)for(const [x,y] of corners(d)){
           const pts=Array.from({length:48},(_,i)=>world(poseAt(this.mode,d,t*i/47),x,y,.009));
