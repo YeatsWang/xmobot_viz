@@ -6,7 +6,7 @@
     wide:{...standard,length:.42,width:.64,height:.08,wheelbase:.40,track:.66},
     high:{...standard,length:.46,width:.39,height:.19,wheelbase:.44,track:.46,radius:.14,wheelWidth:.08}
   };
-  const state = {tab:'motion', geometryHardware:'4wis', profile:'standard', dims:{...standard}, drives:['pivot','pivot'], reference:'diff_drive',
+  const state = {tab:'route', geometryHardware:'4wis', profile:'standard', dims:{...standard}, drives:['pivot','pivot'], reference:'diff_drive',
     singleX:null,dualX:null,spacing:null,az:-Math.PI/2,elevation:1.18,arms:0,time:0,playing:!matchMedia('(prefers-reduced-motion: reduce)').matches,manual:false,english:false};
   const end=4, wheelNames=['front_left','front_right','rear_left','rear_right'];
   // Sidewalls and top panels share a hue. Brass is reserved for steering hardware.
@@ -84,8 +84,9 @@
       this.scene.add(new T.HemisphereLight(0xf6fafb,0x9b9e9a,2.05));
       const sun=new T.DirectionalLight(0xfff8ed,2.45);sun.position.set(2,-3,4);this.scene.add(sun);
       const baseGrid=[],major=[];
-      for(let i=-40;i<=40;i++){const a=i/10;const pts=i%5===0?major:baseGrid;pts.push([a,-4,0],[a,4,0],[-4,a,0],[4,a,0]);}
-      this.scene.add(lines(baseGrid,0xD2D1C9,.32),lines(major,0xAEB4AF,.48));
+      for(let i=-80;i<=80;i++){const a=i/10;const pts=i%5===0?major:baseGrid;pts.push([a,-8,0],[a,8,0],[-8,a,0],[8,a,0]);}
+      this.fineGrid=lines(baseGrid,0xD2D1C9,.32);
+      this.scene.add(this.fineGrid,lines(major,0xAEB4AF,.48));
       this.root=new T.Group();this.scene.add(this.root);
       this.shadow=new T.Mesh(new T.PlaneGeometry(1,1),shadowMat);this.root.add(this.shadow);this.shadow.position.z=.001;
       this.model=new T.Group();this.root.add(this.model);this.mode='';
@@ -143,7 +144,7 @@
         positions.needsUpdate=true;
       });
       this.d=d;this.nodes.base_link.children[0].scale.set(d.length/.5,d.width/.4,d.height/.1);
-      const armCount=state.arms;
+      const armCount=state.tab==='route'?0:state.arms;
       const mount=mounts(d,armCount);this.mount=mount;
       this.joints.base_joint.pivot.position.z=mount.body;
       this.joints.lidar_joint.pivot.position.set(mount.lidar,0,d.height/2+.025);
@@ -163,14 +164,18 @@
       }
       this.shadow.scale.set(Math.max(d.length,d.wheelbase)*1.6,Math.max(d.width,d.track)*1.65,1);
     }
-    articulate(p,t) {
+    wheelAt(i,x,y,frame){
+      if(!frame)return wheelCommand(this.mode,this.d,x,y,this.hardware);
+      const [angle,speed]=frame.w[i];return {angle,speed,rate:speed/this.d.radius};
+    }
+    articulate(p,t,frame) {
       const d=this.d;
       this.root.position.set(p[0],p[1],0);this.root.rotation.z=p[2];
       corners(d).forEach(([x,y],i)=>{
-        const key=wheelNames[i],cmd=wheelCommand(this.mode,d,x,y,this.hardware);
+        const key=wheelNames[i],cmd=this.wheelAt(i,x,y,frame);
         const steer=this.joints[key+'_steering_joint'];
-        if(steer)steer.child.rotation.z=state.tab==='motion'?cmd.angle:0;
-        this.joints[key+'_wheel_joint'].child.rotation.y=cmd.rate*t;
+        if(steer)steer.child.rotation.z=state.tab==='geometry'?0:cmd.angle;
+        this.joints[key+'_wheel_joint'].child.rotation.y=frame?frame.w[i][2]:cmd.rate*t;
       });
       for(const [side,sign] of [['left_',1],['right_',-1]]){
         const angles=[sign*.30,1.12,-1.12,sign*.28,-.56,sign*.22];
@@ -230,7 +235,7 @@
         c.beginPath();face.poly.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.closePath();c.fillStyle=c.strokeStyle=face.color;c.lineWidth=.55;c.fill();c.stroke();
       }
     }
-    render(target,vertical,horizontal){
+    render(target,vertical,horizontal,routeIndex=null){
       const el=this.surface,c=this.ctx,w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;
       this.w=w;this.h=h;const ratio=Math.min(devicePixelRatio||1,1.6);
       if(el.width!==Math.round(w*ratio)||el.height!==Math.round(h*ratio)){
@@ -241,26 +246,39 @@
       const half=Math.max(vertical,horizontal*h/w);
       const cam=this.camera,e=state.elevation,a=state.az;
       cam.top=half;cam.bottom=-half;cam.left=-half*w/h;cam.right=-cam.left;cam.updateProjectionMatrix();
-      cam.position.set(target[0]+4*Math.cos(e)*Math.cos(a),target[1]+4*Math.cos(e)*Math.sin(a),target[2]+4*Math.sin(e));cam.lookAt(...target);cam.updateMatrixWorld();
-      const m=state.tab==='motion', t=m?state.time:0, d=this.d,p=m?poseAt(this.mode,d,t):[0,0,0];
-      this.articulate(p,t);this.traces.forEach(trace=>trace.geometry.setDrawRange(0,1+Math.floor(120*t/end)));
+      const eye=routeIndex===null?4:12;
+      cam.position.set(target[0]+eye*Math.cos(e)*Math.cos(a),target[1]+eye*Math.cos(e)*Math.sin(a),target[2]+eye*Math.sin(e));cam.lookAt(...target);cam.updateMatrixWorld();
+      const frame=routeIndex===null?null:XmobotRoute.frames[routeIndex];
+      const m=state.tab!=='geometry', t=m?state.time:0, d=this.d,p=frame?frame.p:m?poseAt(this.mode,d,t):[0,0,0];
+      if(frame && !this.routeGraphics && this.renderer){
+        this.routeGraphics=XmobotRoute.graphics();this.scene.add(this.routeGraphics.group);
+      }
+      if(this.routeGraphics){
+        this.routeGraphics.group.visible=!!frame;
+        if(frame)this.routeGraphics.seek(routeIndex);
+      }
+      this.articulate(p,t,frame);this.traces.forEach(trace=>trace.geometry.setDrawRange(0,1+Math.floor(120*t/end)));
+      this.fineGrid.visible=routeIndex===null||half<2.4;
       if(this.renderer)this.renderer.render(this.scene,cam);
       else{
         c.fillStyle='#F8F5EE';c.fillRect(0,0,w,h);
-        for(let i=-18;i<=18;i++){this.line([[i/10,-2,0],[i/10,2,0]],'#DCDAD0');this.line([[-2,i/10,0],[2,i/10,0]],'#DCDAD0');}
+        const span=frame?8:2;
+        const step=this.fineGrid.visible?1:5;
+        for(let i=-span*10;i<=span*10;i+=step){this.line([[i/10,-span,0],[i/10,span,0]],'#DCDAD0');this.line([[-span,i/10,0],[span,i/10,0]],'#DCDAD0');}
         if(!m)this.drawSoftwareModel();
       }
       const accent=this.index?'#506A82':'#176D66',z=this.mount.underbody+d.height+.004;
       if(m){
         this.line(this.outline([0,0,0],d.length,d.width,.005),'#687A75',1.3,[4,4]);
-        if(!this.renderer)for(const [x,y] of corners(d)){
+        if(!this.renderer && frame)XmobotRoute.software(this,routeIndex);
+        if(!this.renderer && !frame)for(const [x,y] of corners(d)){
           const pts=Array.from({length:48},(_,i)=>world(poseAt(this.mode,d,t*i/47),x,y,.009));
           this.line(pts,accent,1.8);
         }
         if(!this.renderer)this.drawSoftwareModel();
         // Show the steering direction just outside the wheel, even in an overhead view.
         for(const [i,[x,y]] of corners(d).entries()){
-          const cmd=wheelCommand(this.mode,d,x,y,this.hardware),sign=Math.sign(cmd.speed);
+          const cmd=this.wheelAt(i,x,y,frame),sign=Math.sign(cmd.speed);
           const ux=sign*Math.cos(cmd.angle),uy=sign*Math.sin(cmd.angle),off=Math.sign(y)*(d.wheelWidth/2+.015);
           const length=d.radius*.95, zWheel=d.radius*1.8;
           const tip=[x+length*ux,y+off+length*uy];
@@ -289,10 +307,17 @@
     }
   }
   const panels=[...document.querySelectorAll('.viewport')].map((el,i)=>new Panel(el,i));
+  function duration(){return state.tab==='route'?XmobotRoute.duration:end;}
   function refresh(){
+    if(state.tab==='route'){panels[0].prepare('straight',standard,'4wis');return;}
     panels.forEach((panel,i)=>panel.prepare(state.tab==='geometry'?'straight':state.drives[i],state.tab==='geometry'&&i===0?standard:state.dims,state.tab==='geometry'?state.geometryHardware:(i===1&&state.reference?state.reference:'4wis')));
   }
   function draw(){
+    if(state.tab==='route'){
+      const panel=panels[0], index=XmobotRoute.indexAt(state.time);
+      const {target,half}=XmobotRoute.camera(index,panel.el.clientWidth/(panel.el.clientHeight||1)||1,state.az);
+      panel.render(target,half,0,index);return;
+    }
     const moving=state.tab==='motion';
     let target,vertical,horizontal;
     if(moving){
@@ -319,10 +344,11 @@
     panel.surface.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();set({az:state.az+(e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0),elevation:Math.max(.04,Math.min(1.57,state.elevation+(e.key==='ArrowUp'?.1:e.key==='ArrowDown'?-.1:0)))});window.refreshViews?.();};
   }
   let last=0;
-  function tick(ms){if(state.tab==='motion'&&state.playing&&!state.manual){
-    state.time=Math.min(end,state.time+Math.min((ms-last)/1000,.10));
-    if(state.time>=end)state.playing=false;draw();window.syncTime?.();
+  document.addEventListener('visibilitychange',()=>{last=0;});
+  function tick(ms){if(state.tab!=='geometry'&&state.playing&&!state.manual){
+    state.time=Math.min(duration(),state.time+(last?(ms-last)/1000:0));
+    if(state.time>=duration())state.playing=false;draw();window.syncTime?.();
   }last=ms;requestAnimationFrame(tick);}
-  window.viewer={state,set,draw,profiles,available:panels.every(p=>p.renderer),poseAt,motion,wheelCommand,corners,mounts};
+  window.viewer={state,set,draw,duration,profiles,available:panels.every(p=>p.renderer),poseAt,motion,wheelCommand,corners,mounts};
   refresh();new ResizeObserver(draw).observe(document.querySelector('.twins'));draw();requestAnimationFrame(tick);
 })();

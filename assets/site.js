@@ -86,10 +86,15 @@ function run(drives,reference=null){
  set({drives,reference,time:0,playing:!matchMedia('(prefers-reduced-motion: reduce)').matches});
  update();
 }
-function switchTab(moving){
- set({tab:moving?'motion':'geometry',az:moving?-Math.PI/2:-1.04,elevation:moving?1.18:.58,time:0,playing:moving&&!matchMedia('(prefers-reduced-motion: reduce)').matches});update();
+let savedLap=null;
+function switchTab(tab){
+ if(state.tab===tab)return;
+ if(state.tab==='route')savedLap={time:state.time,playing:state.playing};
+ const moving=tab!=='geometry';
+ set({tab,az:moving?-Math.PI/2:-1.04,elevation:moving?1.18:.58,time:0,playing:moving&&!matchMedia('(prefers-reduced-motion: reduce)').matches,...(tab==='route'?savedLap:null)});update();
 }
-$('geo').onclick=()=>switchTab(false);$('move').onclick=()=>switchTab(true);
+$('route').onclick=()=>switchTab('route');
+$('geo').onclick=()=>switchTab('geometry');$('move').onclick=()=>switchTab('motion');
 for(const [id,az,el] of [['angle',-1.04,.58],['topview',-Math.PI/2,1.57],['side',-Math.PI/2,.055]]){
  $(id).onclick=()=>{set({az,elevation:el});refreshViews();};
 }
@@ -106,26 +111,57 @@ $('hardware').onchange=e=>{
  update();
 };
 $('saveBase').onclick=()=>downloadUrdf($('hardware').value);
-$('play').onclick=()=>{set({playing:!state.playing,time:state.time>=4?0:state.time});};
+$('play').onclick=()=>{set({playing:!state.playing,time:state.time>=viewer.duration()?0:state.time});};
 $('replay').onclick=()=>set({playing:true,time:0});
 $('seek').oninput=e=>set({time:Number(e.target.value),playing:false});
 $('lang').onclick=()=>{set({english:!state.english});update();};
+const lap=XmobotRoute;
+const [[xmin,xmax],[ymin,ymax]]=lap.extent;
+const mapScale=Math.min(222/(xmax-xmin),150/(ymax-ymin));
+const mapPoint=([x,y])=>[126+(x-lap.midpoint[0])*mapScale,90-(y-lap.midpoint[1])*mapScale];
+function mapShape(points){
+ return points.filter((_,i)=>i%3===0||i===points.length-1).map((p,i)=>
+   (i?'L':'M')+mapPoint(p).map(v=>v.toFixed(2)).join(' ')).join(' ');
+}
+$('mapPlan').setAttribute('d',mapShape(lap.centre));
+const mapTracks=lap.tracks.map(points=>{
+ const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+ path.setAttribute('d',mapShape(points));path.setAttribute('pathLength','1');$('mapTracks').append(path);
+ const lengths=[0];
+ for(let i=1;i<points.length;i++)lengths.push(lengths[i-1]+Math.hypot(points[i][0]-points[i-1][0],points[i][1]-points[i-1][1]));
+ return {path,lengths};
+});
+const [startX,startY]=mapPoint(lap.centre[0]);
+$('mapStart').setAttribute('cx',startX);$('mapStart').setAttribute('cy',startY);
+function syncRoute(){
+ const index=lap.indexAt(state.time),[x,y,yaw]=lap.frames[index].p;
+ const [px,py]=mapPoint([x,y]), total=lap.distance.at(-1);
+ const phase=lap.stages.findLast(([start])=>state.time>=start);
+ $('value-a').textContent=state.time>=lap.duration?word('已回到起点','Lap complete'):phase[state.english?2:1];
+ $('lapDistance').textContent=lap.distance[index].toFixed(1)+' / '+total.toFixed(1)+' m';
+ for(const {path,lengths} of mapTracks)path.setAttribute('stroke-dasharray',(lengths[index]/lengths.at(-1))+' 1');
+ $('mapRobot').setAttribute('transform','translate('+px+' '+py+') rotate('+(-yaw*180/Math.PI)+')');
+}
 window.syncTime=function(){
+ if(state.tab==='route')syncRoute();
  if(state.tab==='motion'&&!state.manual){
   for(const [n,suffix] of ['a','b'].entries()){
    const [x,y,yaw]=viewer.poseAt(state.drives[n],state.dims,state.time);
    $('value-'+suffix).textContent='X '+(x*100).toFixed(0)+' cm  ·  Y '+(y*100).toFixed(0)+' cm  ·  '+word('航向 ','Yaw ')+Math.round(yaw*180/Math.PI)+'°';
   }
  }
- $('play').textContent=state.playing?word('暂停','Pause'):word('播放','Play');$('seek').value=state.time;$('clock').textContent=state.time.toFixed(1)+' / 4 s';
+ $('play').textContent=state.playing?word('暂停','Pause'):word('播放','Play');$('seek').max=viewer.duration();$('seek').value=state.time;$('clock').textContent=state.time.toFixed(1)+' / '+viewer.duration()+' s';
 };
 function update(){
- const i=state.english?1:0,move=state.tab==='motion',comparison=scenarios[activeScenario];
+ const i=state.english?1:0,move=state.tab==='motion',route=state.tab==='route',comparison=scenarios[activeScenario];
  document.documentElement.lang=word('zh-CN','en');document.title=word('Xmobot · 机器人形态与运动','Xmobot · Geometry & Motion');
  for(const [e,zh] of translated)e.textContent=word(zh,e.dataset.en);
  $('lang').textContent=word('English','中文');$('lang').lang=word('en','zh-CN');
- $('geometry').hidden=move;$('movement').hidden=!move;$('player').hidden=!move;$('geoFoot').hidden=move;
- $('geo').setAttribute('aria-pressed',!move);$('move').setAttribute('aria-pressed',move);
+ $('lapSummary').hidden=!route;$('setupControls').hidden=route;$('kinematics').hidden=route;
+ $('panel-b').hidden=route;document.querySelector('.twins').classList.toggle('route-view',route);
+ $('route').setAttribute('aria-pressed',route);
+ $('geometry').hidden=move||route;$('movement').hidden=!move;$('player').hidden=!move&&!route;$('geoFoot').hidden=move||route;
+ $('geo').setAttribute('aria-pressed',!move&&!route);$('move').setAttribute('aria-pressed',move);
  for(const b of $('presets').children){b.textContent=labels[b.dataset.key][i];b.setAttribute('aria-pressed',state.profile===b.dataset.key);}
  for(const key of Object.keys(profiles.standard)){
   const val=Math.round(state.dims[key]*scale(key));$(key).value=val;document.querySelector('output[for="'+key+'"]').textContent=val+' cm';
@@ -164,7 +200,7 @@ function update(){
  state.drives.forEach((key,j)=>{
    const sel=$('drive'+j),box=sel.parentElement,ab=j?'B':'A';
    box.querySelector('label').textContent=ab+word(' 车',' · drive');for(const opt of sel.options)opt.textContent=drives[opt.value][i];sel.value=key;
-   const suffix=j?'b':'a',title=move?(comparison?(j?hardwareNames[comparison.hardware][i]:'Xmobot · 4WISD'):drives[key][i]):j?word('当前 · ','Current · ')+labels[state.profile][i]:word('参照 · 标准底盘','Reference · standard');
+   const suffix=j?'b':'a',title=route?'Xmobot · 4WISD':move?(comparison?(j?hardwareNames[comparison.hardware][i]:'Xmobot · 4WISD'):drives[key][i]):j?word('当前 · ','Current · ')+labels[state.profile][i]:word('参照 · 标准底盘','Reference · standard');
    $('name-'+suffix).textContent=title;$('value-'+suffix).textContent=move?(ab+'  /  '+(j&&comparison?comparison.hardware:'4wis')):info(j?state.dims:profiles.standard);
    document.querySelector('#panel-'+suffix+' .overlay').setAttribute('aria-label',title+word('。拖动或按方向键旋转。','. Drag or use arrow keys to orbit.'));
  });
@@ -185,21 +221,24 @@ function update(){
      info.replaceChildren(...wheels.map((cmd,k)=>{const cell=document.createElement('span');cell.style.setProperty('--steer',(-cmd.angle)+'rad');cell.textContent=word(['左前','右前','左后','右后'][k],['FL','FR','RL','RR'][k])+' '+Math.round(cmd.angle*180/Math.PI)+'° / '+cmd.rate.toFixed(1);return cell;}));
    }
  }
- renderKinematics(state,hardwareNames);
- refreshViews();syncTime();
+ if(!route)renderKinematics(state,hardwareNames);
+ viewer.draw();refreshViews();syncTime();
 }
 function openComparison(){
  const key=location.hash.slice(1);
+ if(key==='route'||key==='kinematics'){
+   switchTab(key==='route'?'route':'motion');(key==='route'?document.querySelector('.lab'):$('kinematics')).scrollIntoView();return;
+ }
  if(key==='geometry'){
-   switchTab(false);document.querySelector('.lab').scrollIntoView();return;
+   switchTab('geometry');document.querySelector('.lab').scrollIntoView();return;
  }
  if(!Object.hasOwn(scenarios,key))return;
- switchTab(true);selectScenario(key);
+ switchTab('motion');selectScenario(key);
  document.querySelector('.lab').scrollIntoView();
 }
 window.addEventListener('hashchange',openComparison);
 $('wheelExample').onchange=()=>renderKinematics(state,hardwareNames);
-$('editGeometry').onclick=()=>{switchTab(false);$('wheelbase').focus();};
-$('seeEquations').onclick=()=>{switchTab(true);$('kinematics').scrollIntoView();};
+$('editGeometry').onclick=()=>{switchTab('geometry');$('wheelbase').focus();};
+$('seeEquations').onclick=()=>{switchTab('motion');$('kinematics').scrollIntoView();};
 update();openComparison();
 })();

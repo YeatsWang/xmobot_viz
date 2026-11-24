@@ -1,0 +1,67 @@
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const {pathToFileURL} = require('node:url');
+const {chromium} = require('playwright');
+
+async function main(){
+  const url=process.argv[2] || pathToFileURL(path.resolve(__dirname,'../index.html')).href;
+  const browser=await chromium.launch({executablePath:process.env.CHROME_BIN || undefined,args:['--enable-unsafe-swiftshader']});
+  try{
+    const page=await browser.newPage({viewport:{width:1280,height:800}});
+    const errors=[];
+    page.on('pageerror',error=>errors.push(error.message));
+    await page.goto(url);
+    await page.waitForFunction(()=>window.viewer?.state.tab==='route' && viewer.state.time>.1);
+    assert(await page.locator('#lapSummary').isVisible());
+    assert(await page.locator('#panel-b').isHidden());
+    const metrics=await page.evaluate(()=>{
+      const {frames,tracks,distance}=XmobotRoute;
+      let error=0;
+      // Differentiate the rendered wheel tracks independently of the chassis Jacobian.
+      for(let i=1;i<frames.length-1;i++){
+        for(let j=0;j<4;j++){
+          const [steer,speed]=frames[i].w[j],heading=frames[i].p[2]+steer;
+          const [dx,dy]=tracks[j][i+1].map((v,axis)=>(v-tracks[j][i-1][axis])*12);
+          error=Math.max(error,Math.hypot(dx-speed*Math.cos(heading),dy-speed*Math.sin(heading)));
+        }
+      }
+      return {length:distance.at(-1),end:frames.at(-1).p,error,count:tracks.length};
+    });
+    assert(Math.abs(metrics.length-22.16)<.02);
+    assert(Math.hypot(metrics.end[0],metrics.end[1])<1e-4);
+    assert(Math.abs(metrics.end[2]+2*Math.PI)<1e-4);
+    assert(metrics.error<.016, String(metrics.error));
+    assert.equal(metrics.count,4);
+    await page.locator('#seek').fill('19');
+    assert.equal(await page.locator('#value-a').innerText(),'横移');
+    if(process.env.WATCH_LAP){
+      await page.click('#replay');
+    }else{
+      await page.locator('#seek').fill('57.6');
+      await page.click('#play');
+    }
+    await page.waitForFunction(()=>viewer.state.time===58 && !viewer.state.playing,null,{timeout:75000});
+    assert.equal(await page.locator('#value-a').innerText(),'已回到起点');
+    const picture=await page.locator('#panel-a .world').screenshot();
+    await page.waitForTimeout(160);
+    assert(picture.equals(await page.locator('#panel-a .world').screenshot()));
+    await page.click('#move');assert(await page.locator('#panel-b').isVisible());
+    assert.equal(await page.locator('#seek').getAttribute('max'),'4');
+    await page.click('#geo');await page.selectOption('#arms','1');
+    await page.click('#route');
+    assert.equal(await page.locator('#clock').innerText(),'58.0 / 58 s');
+    await page.click('#lang');assert.equal(await page.locator('#value-a').innerText(),'Lap complete');
+    await page.click('#replay');
+    await page.waitForFunction(()=>viewer.state.playing && viewer.state.time>0 && viewer.state.time<2);
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.setViewportSize({width:390,height:844});
+    await page.reload();
+    assert.equal(await page.locator('#clock').innerText(),'0.0 / 58 s');
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await page.goto(url+'#kinematics');
+    await page.locator('#calc-a math').first().waitFor();
+    assert.deepEqual(errors,[]);
+    console.log('Default lap, wheel kinematics, end hold, replay, comparisons, reduced motion and mobile passed.');
+  }finally{await browser.close();}
+}
+main().catch(error=>{console.error(error);process.exitCode=1;});

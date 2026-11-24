@@ -2,7 +2,9 @@
 
 [Open the interactive configurator](https://yeatswang.github.io/xmobot_viz/) · [Xmobot ROS model](https://github.com/YeatsWang/xmobot)
 
-Xmobot is a configurable, extensible mobile robot model. X stands for its many possible configurations. Mobot stands for mobile robot. Use the motion comparison to explore four-wheel independent steering and driving (4WISD), then switch to Mechanical layout to build and export your own Xmobot.
+Xmobot is a configurable, extensible mobile robot model. X stands for its many possible configurations. Mobot stands for mobile robot. The viewer opens with a 58-second, 22.2 m lap driven by a four-wheel independent steering and driving (4WISD) configuration. Follow the robot through a sweeping turn, sideways and diagonal travel, front- and rear-wheel steering and a final pivot. The four wheel tracks stay on the ground when the robot returns to its starting pose. Use the timeline to revisit any part of the lap.
+
+Choose **Motion comparison / 运动对比** to compare individual motions, or **Mechanical layout / 机械配置** to build and export your own Xmobot.
 
 | Motion | Compare with | Wheel behaviour |
 | --- | --- | --- |
@@ -39,6 +41,8 @@ The release check downloads 20 URDFs from the page, covering five drivetrains, a
 ```sh
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium
+python3 tools/build_route.py
+node test/route.cjs
 node test/motion.cjs
 node test/downloads.cjs
 python -m pip install mujoco==3.17.0 numpy xacro pyyaml
