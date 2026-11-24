@@ -6,10 +6,11 @@
   }));
   const duration = (frames.length - 1) / fps;
   const stages = [
-    [0,'直行','Straight'], [8.5,'四轮协调左转','Coordinated left turn'],
-    [15,'横移','Lateral translation'], [22,'斜行','Diagonal translation'],
-    [30.5,'前轮转向','Front-wheel steering'], [37,'后轮转向','Rear-wheel steering'],
-    [42.5,'转向起点','Return to start'], [49.5,'原地回转','Centre pivot']
+    [0,'直行','Straight'], [5,'四轮协调右转','Coordinated right turn'],
+    [13,'向左横移','Translate left'], [21,'向右斜行','Diagonal right'],
+    [29.5,'前轮阿克曼 · 右转','Front Ackermann · right turn'],
+    [41.5,'后轮阿克曼 · 左转','Rear Ackermann · left turn'],
+    [53.5,'柳叶飘','Leaf sway'], [62,'原地回转','Centre pivot']
   ];
   const centre = frames.map(({p}) => [p[0], p[1]]);
   const tracks = [[.25,.2],[.25,-.2],[-.25,.2],[-.25,-.2]].map(([cx,cy]) =>
@@ -25,7 +26,7 @@
   const midpoint = extent.map(([a,b]) => (a+b)/2);
   function indexAt(time) {return Math.max(0,Math.min(frames.length-1,Math.round(time*fps)));}
   function camera(index, aspect, azimuth=-Math.PI/2) {
-    const p=centre[index], t=index/fps, u=Math.max(0,Math.min(1,(t-51)/5.2));
+    const p=centre[index], t=index/fps, u=Math.max(0,Math.min(1,(t-64.6)/3.9));
     const blend=u*u*(3-2*u);
     const target=[...p.map((v,i)=>v+(midpoint[i]-v)*blend),.10];
     const dx=(extent[0][1]-extent[0][0])/2,dy=(extent[1][1]-extent[1][0])/2;

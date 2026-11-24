@@ -12,7 +12,7 @@ button,select,summary,input[type=range]{cursor:pointer} button:hover,select:hove
 .wrap{width:min(1440px,94%);margin:auto}
 header{border-bottom:1px solid var(--line)}.nav,nav,.brand,.labnav,.strip,.transport,.arms,.drive-choice,footer{display:flex;align-items:center}
 .nav{height:54px;justify-content:space-between}.brand{gap:9px;font-size:20px;font-weight:750;text-decoration:none}
-.mark{display:grid;place-items:center;width:27px;height:27px;border-radius:6px;background:var(--ink);color:var(--paper);font:25px/1 Arial}
+.brand-logo{display:block;object-fit:contain;flex:none}
 nav{gap:20px}nav a,footer a{font-size:13px}
 .hero{display:flex;align-items:center;justify-content:space-between;gap:40px;padding:30px 0 25px}
 .hero h1{font:650 clamp(52px,5.2vw,81px)/.98 "Inter",Arial,sans-serif;letter-spacing:-.075em}

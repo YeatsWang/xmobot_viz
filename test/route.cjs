@@ -27,20 +27,46 @@ async function main(){
       }
       return {length:distance.at(-1),end:frames.at(-1).p,error,count:tracks.length};
     });
-    assert(Math.abs(metrics.length-22.16)<.02);
+    assert(Math.abs(metrics.length-25.22)<.02);
     assert(Math.hypot(metrics.end[0],metrics.end[1])<1e-4);
-    assert(Math.abs(metrics.end[2]+2*Math.PI)<1e-4);
+    assert(Math.abs(metrics.end[2])<1e-4);
     assert(metrics.error<.016, String(metrics.error));
     assert.equal(metrics.count,4);
     await page.locator('#seek').fill('19');
-    assert.equal(await page.locator('#value-a').innerText(),'横移');
+    assert.equal(await page.locator('#value-a').innerText(),'向左横移');
+    assert(await page.locator('.brand-logo').evaluate(img=>img.complete && img.naturalWidth>0));
+    const maneuvers=await page.evaluate(()=>{
+      const {frames,indexAt,stages}=XmobotRoute;
+      const axleChecks=[[30.25,40.75,0,-1],[42.25,52.75,2,1]].map(([from,to,steered,yawSign])=>{
+        for(let i=indexAt(from);i<=indexAt(to);i++){
+          const {p,w}=frames[i];
+          if((p[2]-frames[i-1].p[2])*yawSign<=0)return false;
+          if(!w.every(([angle],j)=>Math.floor(j/2)===steered/2?angle<-.12:angle===0))return false;
+        }
+        return true;
+      });
+      function lateralAt(t){
+        const i=indexAt(t),p=frames[i].p,q=frames[i+1].p;
+        return 24*((q[1]-p[1])*Math.cos(p[2])-(q[0]-p[0])*Math.sin(p[2]));
+      }
+      return {axleChecks,front:stages[5][0]-stages[4][0],rear:stages[6][0]-stages[5][0],
+        sway:[lateralAt(55),lateralAt(58)],arrival:frames[indexAt(62)].p.slice(0,2)};
+    });
+    assert.deepEqual(maneuvers.axleChecks,[true,true]);
+    assert.equal(maneuvers.front,12);assert.equal(maneuvers.rear,12);
+    assert(maneuvers.sway[0]>.15 && maneuvers.sway[1]<-.15);
+    assert(Math.hypot(...maneuvers.arrival)<1e-4);
+    for(const [time,label] of [[35,'前轮阿克曼 · 右转'],[47,'后轮阿克曼 · 左转'],[56,'柳叶飘']]){
+      await page.locator('#seek').fill(String(time));
+      assert.equal(await page.locator('#value-a').innerText(),label);
+    }
     if(process.env.WATCH_LAP){
       await page.click('#replay');
     }else{
-      await page.locator('#seek').fill('57.6');
+      await page.locator('#seek').fill('69.6');
       await page.click('#play');
     }
-    await page.waitForFunction(()=>viewer.state.time===58 && !viewer.state.playing,null,{timeout:75000});
+    await page.waitForFunction(()=>viewer.state.time===70 && !viewer.state.playing,null,{timeout:85000});
     assert.equal(await page.locator('#value-a').innerText(),'已回到起点');
     const picture=await page.locator('#panel-a .world').screenshot();
     await page.waitForTimeout(160);
@@ -49,14 +75,14 @@ async function main(){
     assert.equal(await page.locator('#seek').getAttribute('max'),'4');
     await page.click('#geo');await page.selectOption('#arms','1');
     await page.click('#route');
-    assert.equal(await page.locator('#clock').innerText(),'58.0 / 58 s');
+    assert.equal(await page.locator('#clock').innerText(),'70.0 / 70 s');
     await page.click('#lang');assert.equal(await page.locator('#value-a').innerText(),'Lap complete');
     await page.click('#replay');
     await page.waitForFunction(()=>viewer.state.playing && viewer.state.time>0 && viewer.state.time<2);
     await page.emulateMedia({reducedMotion:'reduce'});
     await page.setViewportSize({width:390,height:844});
     await page.reload();
-    assert.equal(await page.locator('#clock').innerText(),'0.0 / 58 s');
+    assert.equal(await page.locator('#clock').innerText(),'0.0 / 70 s');
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     await page.goto(url+'#kinematics');
     await page.locator('#calc-a math').first().waitFor();
