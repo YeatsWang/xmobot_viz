@@ -14,7 +14,8 @@ async function main(){
     await page.waitForFunction(()=>window.viewer?.state.tab==='route' && viewer.state.time>.1);
     assert(await page.locator('#lapSummary').isVisible());
     assert(await page.locator('#panel-b').isHidden());
-    assert.equal(await page.locator('#routeFraming').inputValue(),'overview');
+    assert.deepEqual(await page.locator('.views button').allTextContents(),['立体','俯视','侧视']);
+    assert.equal(await page.locator('.views select').count(),0);
     const framing=await page.evaluate(()=>{
       const {tracks,floorBounds,camera,indexAt}=XmobotRoute;
       const margins=floorBounds.flatMap(([low,high],axis)=>{
@@ -35,9 +36,9 @@ async function main(){
     });
     assert(framing.margins.every(m=>Math.abs(m-1)<1e-6) && framing.fits);
     await page.locator('#seek').fill('28');
-    await page.selectOption('#routeFraming','follow');
+    await page.click('#topview');
     assert.equal(await page.evaluate(()=>viewer.state.time),28);
-    await page.selectOption('#routeFraming','overview');
+    await page.click('#angle');
     const metrics=await page.evaluate(()=>{
       const {frames,tracks,distance}=XmobotRoute;
       let error=0;

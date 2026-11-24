@@ -93,7 +93,6 @@ function switchTab(tab){
  const moving=tab!=='geometry';
  set({tab,az:tab==='motion'?-Math.PI/2:-1.04,elevation:tab==='motion'?1.18:.58,time:0,playing:moving&&!matchMedia('(prefers-reduced-motion: reduce)').matches,...(tab==='route'?savedLap:null)});update();
 }
-$('routeFraming').onchange=e=>set({routeFraming:e.target.value});
 $('route').onclick=()=>switchTab('route');
 $('geo').onclick=()=>switchTab('geometry');$('move').onclick=()=>switchTab('motion');
 for(const [id,az,el] of [['angle',-1.04,.58],['topview',-Math.PI/2,1.57],['side',-Math.PI/2,.055]]){
@@ -177,7 +176,7 @@ function update(){
  document.documentElement.lang=word('zh-CN','en');document.title=word('Xmobot · 机器人形态与运动','Xmobot · Geometry & Motion');
  for(const [e,zh] of translated)e.textContent=word(zh,e.dataset.en);
  $('lang').textContent=word('English','中文');$('lang').lang=word('en','zh-CN');
- $('routeFraming').value=state.routeFraming;$('routeFraming').hidden=!route;$('lapSummary').hidden=!route;$('setupControls').hidden=route;$('kinematics').hidden=route;
+ $('lapSummary').hidden=!route;$('setupControls').hidden=route;$('kinematics').hidden=route;
  $('panel-b').hidden=route;document.querySelector('.twins').classList.toggle('route-view',route);
  $('route').setAttribute('aria-pressed',route);
  $('geometry').hidden=move||route;$('movement').hidden=!move;$('player').hidden=!move&&!route;$('geoFoot').hidden=move||route;
