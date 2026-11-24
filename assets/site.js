@@ -91,8 +91,9 @@ function switchTab(tab){
  if(state.tab===tab)return;
  if(state.tab==='route')savedLap={time:state.time,playing:state.playing};
  const moving=tab!=='geometry';
- set({tab,az:moving?-Math.PI/2:-1.04,elevation:moving?1.18:.58,time:0,playing:moving&&!matchMedia('(prefers-reduced-motion: reduce)').matches,...(tab==='route'?savedLap:null)});update();
+ set({tab,az:tab==='motion'?-Math.PI/2:-1.04,elevation:tab==='motion'?1.18:.58,time:0,playing:moving&&!matchMedia('(prefers-reduced-motion: reduce)').matches,...(tab==='route'?savedLap:null)});update();
 }
+$('routeFraming').onchange=e=>set({routeFraming:e.target.value});
 $('route').onclick=()=>switchTab('route');
 $('geo').onclick=()=>switchTab('geometry');$('move').onclick=()=>switchTab('motion');
 for(const [id,az,el] of [['angle',-1.04,.58],['topview',-Math.PI/2,1.57],['side',-Math.PI/2,.055]]){
@@ -176,7 +177,7 @@ function update(){
  document.documentElement.lang=word('zh-CN','en');document.title=word('Xmobot · 机器人形态与运动','Xmobot · Geometry & Motion');
  for(const [e,zh] of translated)e.textContent=word(zh,e.dataset.en);
  $('lang').textContent=word('English','中文');$('lang').lang=word('en','zh-CN');
- $('lapSummary').hidden=!route;$('setupControls').hidden=route;$('kinematics').hidden=route;
+ $('routeFraming').value=state.routeFraming;$('routeFraming').hidden=!route;$('lapSummary').hidden=!route;$('setupControls').hidden=route;$('kinematics').hidden=route;
  $('panel-b').hidden=route;document.querySelector('.twins').classList.toggle('route-view',route);
  $('route').setAttribute('aria-pressed',route);
  $('geometry').hidden=move||route;$('movement').hidden=!move;$('player').hidden=!move&&!route;$('geoFoot').hidden=move||route;
@@ -247,10 +248,10 @@ function openComparison(){
  const key=location.hash.slice(1);
  if(key==='classic'||key==='letter'){
    if(key==='letter')history.replaceState(null,'','#classic');
-   switchTab('route');document.querySelector('.lab').scrollIntoView();return;
+   switchTab('route');set({routeFraming:'overview'});update();document.querySelector('.lab').scrollIntoView();return;
  }
  if(key==='compound'){
-   switchTab('route');set({time:lap.stages[6][0],playing:!matchMedia('(prefers-reduced-motion: reduce)').matches});document.querySelector('.lab').scrollIntoView();return;
+   switchTab('route');set({routeFraming:'follow',time:lap.stages[6][0],playing:!matchMedia('(prefers-reduced-motion: reduce)').matches});update();document.querySelector('.lab').scrollIntoView();return;
  }
  if(key==='route'||key==='kinematics'){
    switchTab(key==='route'?'route':'motion');(key==='route'?document.querySelector('.lab'):$('kinematics')).scrollIntoView();return;

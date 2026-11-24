@@ -25,15 +25,52 @@
   });
   const midpoint = extent.map(([a,b]) => (a+b)/2);
   function indexAt(time) {return Math.max(0,Math.min(frames.length-1,Math.round(time*fps)));}
-  function camera(index, aspect, azimuth=-Math.PI/2) {
-    const p=centre[index], t=index/fps, u=Math.max(0,Math.min(1,(t-64.6)/3.9));
-    const blend=u*u*(3-2*u);
-    const target=[...p.map((v,i)=>v+(midpoint[i]-v)*blend),.10];
-    const dx=(extent[0][1]-extent[0][0])/2,dy=(extent[1][1]-extent[1][0])/2;
-    const s=Math.abs(Math.sin(azimuth)), c=Math.abs(Math.cos(azimuth));
-    const overview=Math.max((s*dx+c*dy+.67)/aspect,c*dx+s*dy+.67);
+  // Size the physical floor around the outer wheel paths, including the final pivot.
+  const floorBounds=extent.map((_,axis)=>{
+    const values=tracks.flatMap(track=>track.map(p=>p[axis]));
+    return [Math.min(...values)-1,Math.max(...values)+1];
+  });
+  const floorCentre=floorBounds.map(([min,max])=>(min+max)/2);
+  const [width,depth]=floorBounds.map(([min,max])=>max-min);
+  const [[left,right],[bottom,top]]=floorBounds;
+  const perimeter=[[left,bottom,0],[right,bottom,0],[right,top,0],[left,top,0],[left,bottom,0]];
+  const major=[],minor=[];
+  for(let i=Math.ceil(left*10);i<=Math.floor(right*10);i++)
+    (i%5?minor:major).push([i/10,bottom,0],[i/10,top,0]);
+  for(let i=Math.ceil(bottom*10);i<=Math.floor(top*10);i++)
+    (i%5?minor:major).push([left,i/10,0],[right,i/10,0]);
+
+  function camera(index,aspect,azimuth,elevation,overview){
+    const p=centre[index],target=p.map((v,i)=>v+(floorCentre[i]-v)*overview);
+    const s=Math.abs(Math.sin(azimuth)),c=Math.abs(Math.cos(azimuth));
+    const across=(s*width+c*depth)/2, along=(c*width+s*depth)/2;
+    const fit=1.07*Math.max(across/aspect,along*Math.sin(elevation)+.28*Math.cos(elevation));
     const close=Math.max(.78,.83/aspect);
-    return {target,half:close+(overview-close)*blend,reveal:blend};
+    return {target:[...target,.10*(1-overview)],half:close+(fit-close)*overview};
+  }
+  function floorGraphics(){
+    const T=window.THREE,group=new T.Group();
+    const surface=new T.Mesh(new T.PlaneGeometry(width,depth),new T.MeshBasicMaterial({color:0xf0efe7}));
+    surface.position.set(...floorCentre,-.004);group.add(surface);
+    function gridLines(points,color,opacity){
+      const geom=new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(...p)));
+      return new T.LineSegments(geom,new T.LineBasicMaterial({color,transparent:true,opacity,depthWrite:false}));
+    }
+    const detail=gridLines(minor,0xcbd0c5,.4);
+    const edges=perimeter.slice(1).flatMap((p,i)=>[perimeter[i],p]);
+    group.add(detail,gridLines(major,0xaab3a8,.62),gridLines(edges,0x939f93,.85));
+    return {group,detail};
+  }
+  function softwareFloor(panel,showDetail){
+    const ctx=panel.ctx;
+    ctx.beginPath();
+    perimeter.forEach((p,i)=>i?ctx.lineTo(...panel.project(p)):ctx.moveTo(...panel.project(p)));
+    ctx.closePath();ctx.fillStyle='#f0efe7';ctx.fill();
+    function grid(points,color){
+      for(let i=0;i<points.length;i+=2)panel.line([points[i],points[i+1]],color);
+    }
+    if(showDetail)grid(minor,'#d9dcd1');
+    grid(major,'#c4cabe');panel.line(perimeter,'#939f93',1);
   }
   // Use metre-wide geometry for traces. WebGL line primitives are often fixed at one device pixel.
   function ribbon(points, width, height, color, dashed=false) {
@@ -55,17 +92,17 @@
   }
   const colors=['#13645F','#358882','#13645F','#358882'];
   function graphics(){
-    const group=new THREE.Group();
+    const floor=floorGraphics(),group=floor.group;
     group.add(ribbon(centre,.034,.004,'#AA7639',true));
     const drawn=tracks.map((points,i)=>ribbon(points,.034,.010+i*.0003,colors[i]));
     group.add(...drawn);
     function seek(index){for(const mesh of drawn)mesh.geometry.setDrawRange(0,6*index);}
-    seek(0);return {group,seek};
+    seek(0);return {group,seek,detail:floor.detail};
   }
   function software(panel,index){
     const sampled=(pts,end)=>pts.filter((_,i)=>i<=end&&(i%4===0||i===end)).map(([x,y])=>[x,y,.01]);
     panel.line(sampled(centre,centre.length-1),'#AA7639',2,[6,4]);
     tracks.forEach((pts,i)=>panel.line(sampled(pts,index),colors[i],2.6));
   }
-  window.XmobotRoute={frames,duration,stages,centre,tracks,distance,extent,midpoint,indexAt,camera,graphics,software};
+  window.XmobotRoute={frames,duration,stages,centre,tracks,distance,extent,midpoint,indexAt,floorBounds,camera,graphics,software,softwareFloor};
 })();

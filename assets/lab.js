@@ -6,8 +6,8 @@
     wide:{...standard,length:.42,width:.64,height:.08,wheelbase:.40,track:.66},
     high:{...standard,length:.46,width:.39,height:.19,wheelbase:.44,track:.46,radius:.14,wheelWidth:.08}
   };
-  const state = {tab:'route', geometryHardware:'4wis', profile:'standard', dims:{...standard}, drives:['pivot','pivot'], reference:'diff_drive',
-    singleX:null,dualX:null,spacing:null,az:-Math.PI/2,elevation:1.18,arms:0,time:0,playing:!matchMedia('(prefers-reduced-motion: reduce)').matches,manual:false,english:false};
+  const state = {tab:'route', routeFraming:'overview', geometryHardware:'4wis', profile:'standard', dims:{...standard}, drives:['pivot','pivot'], reference:'diff_drive',
+    singleX:null,dualX:null,spacing:null,az:-1.04,elevation:.58,arms:0,time:0,playing:!matchMedia('(prefers-reduced-motion: reduce)').matches,manual:false,english:false};
   const end=4, wheelNames=['front_left','front_right','rear_left','rear_right'];
   // Sidewalls and top panels share a hue. Brass is reserved for steering hardware.
   const chassisFinishes=[
@@ -86,7 +86,7 @@
       const baseGrid=[],major=[];
       for(let i=-80;i<=80;i++){const a=i/10;const pts=i%5===0?major:baseGrid;pts.push([a,-8,0],[a,8,0],[-8,a,0],[8,a,0]);}
       this.fineGrid=lines(baseGrid,0xD2D1C9,.32);
-      this.scene.add(this.fineGrid,lines(major,0xAEB4AF,.48));
+      this.baseGrid=new T.Group();this.baseGrid.add(this.fineGrid,lines(major,0xAEB4AF,.48));this.scene.add(this.baseGrid);
       this.root=new T.Group();this.scene.add(this.root);
       this.shadow=new T.Mesh(new T.PlaneGeometry(1,1),shadowMat);this.root.add(this.shadow);this.shadow.position.z=.001;
       this.model=new T.Group();this.root.add(this.model);this.mode='';
@@ -255,16 +255,17 @@
       }
       if(this.routeGraphics){
         this.routeGraphics.group.visible=!!frame;
-        if(frame)this.routeGraphics.seek(routeIndex);
+        if(frame){this.routeGraphics.seek(routeIndex);this.routeGraphics.detail.visible=half<2.4;}
       }
       this.articulate(p,t,frame);this.traces.forEach(trace=>trace.geometry.setDrawRange(0,1+Math.floor(120*t/end)));
-      this.fineGrid.visible=routeIndex===null||half<2.4;
+      this.baseGrid.visible=!frame;
       if(this.renderer)this.renderer.render(this.scene,cam);
       else{
         c.fillStyle='#F8F5EE';c.fillRect(0,0,w,h);
-        const span=frame?8:2;
-        const step=this.fineGrid.visible?1:5;
-        for(let i=-span*10;i<=span*10;i+=step){this.line([[i/10,-span,0],[i/10,span,0]],'#DCDAD0');this.line([[-span,i/10,0],[span,i/10,0]],'#DCDAD0');}
+        if(frame)XmobotRoute.softwareFloor(this,half<2.4);
+        else for(let i=-20;i<=20;i++){
+          this.line([[i/10,-2,0],[i/10,2,0]],'#DCDAD0');this.line([[-2,i/10,0],[2,i/10,0]],'#DCDAD0');
+        }
         if(!m)this.drawSoftwareModel();
       }
       const accent=this.index?'#506A82':'#176D66',z=this.mount.underbody+d.height+.004;
@@ -315,7 +316,7 @@
   function draw(){
     if(state.tab==='route'){
       const panel=panels[0], index=XmobotRoute.indexAt(state.time);
-      const {target,half}=XmobotRoute.camera(index,panel.el.clientWidth/(panel.el.clientHeight||1)||1,state.az);
+      const {target,half}=XmobotRoute.camera(index,panel.el.clientWidth/(panel.el.clientHeight||1)||1,state.az,state.elevation,state.routeFraming==='overview'?1:0);
       panel.render(target,half,0,index);return;
     }
     const moving=state.tab==='motion';

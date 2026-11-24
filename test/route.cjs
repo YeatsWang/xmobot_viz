@@ -14,6 +14,30 @@ async function main(){
     await page.waitForFunction(()=>window.viewer?.state.tab==='route' && viewer.state.time>.1);
     assert(await page.locator('#lapSummary').isVisible());
     assert(await page.locator('#panel-b').isHidden());
+    assert.equal(await page.locator('#routeFraming').inputValue(),'overview');
+    const framing=await page.evaluate(()=>{
+      const {tracks,floorBounds,camera,indexAt}=XmobotRoute;
+      const margins=floorBounds.flatMap(([low,high],axis)=>{
+        const coords=tracks.flatMap(track=>track.map(p=>p[axis]));
+        return [Math.min(...coords)-low, high-Math.max(...coords)];
+      });
+      const centre=floorBounds.map(([low,high])=>(low+high)/2);
+      const fits=[.7,1.8].every(aspect=>[-1.04,.7,2.9].every(az=>[.055,.58,1.57].every(el=>{
+        const {target,half}=camera(indexAt(28),aspect,az,el,1);
+        if(Math.hypot(target[0]-centre[0],target[1]-centre[1])>1e-6)return false;
+        return floorBounds[0].every(x=>floorBounds[1].every(y=>{
+          const dx=x-target[0],dy=y-target[1];
+          return Math.abs(-Math.sin(az)*dx+Math.cos(az)*dy)<half*aspect &&
+            Math.abs((Math.cos(az)*dx+Math.sin(az)*dy)*Math.sin(el))<half;
+        }));
+      })));
+      return {margins,fits};
+    });
+    assert(framing.margins.every(m=>Math.abs(m-1)<1e-6) && framing.fits);
+    await page.locator('#seek').fill('28');
+    await page.selectOption('#routeFraming','follow');
+    assert.equal(await page.evaluate(()=>viewer.state.time),28);
+    await page.selectOption('#routeFraming','overview');
     const metrics=await page.evaluate(()=>{
       const {frames,tracks,distance}=XmobotRoute;
       let error=0;
