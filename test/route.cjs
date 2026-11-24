@@ -14,34 +14,6 @@ async function main(){
     await page.waitForFunction(()=>window.viewer?.state.tab==='route' && viewer.state.time>.1);
     assert(await page.locator('#lapSummary').isVisible());
     assert(await page.locator('#panel-b').isHidden());
-    assert.equal(await page.locator('#routeShape').inputValue(),'letter');
-    const letter=await page.evaluate(()=>{
-      const {frames,tracks,distance,indexAt}=XmobotRoute;
-      let velocityError=0;
-      for(let i=1;i<frames.length-1;i++)for(let j=0;j<4;j++){
-        const [angle,v]=frames[i].w[j],h=frames[i].p[2]+angle;
-        const [dx,dy]=tracks[j][i+1].map((n,axis)=>(n-tracks[j][i-1][axis])*12);
-        velocityError=Math.max(velocityError,Math.hypot(dx-v*Math.cos(h),dy-v*Math.sin(h)));
-      }
-      const fixedAxle=[[24,29,2],[35,41,0]].map(([start,end,axle])=>
-        frames.slice(indexAt(start),indexAt(end)+1).every(f=>f.w.slice(axle,axle+2).every(w=>Math.abs(w[0])<.002)));
-      return {start:frames[0].p,end:frames.at(-1).p,length:distance.at(-1),velocityError,fixedAxle,
-        lateral:[53,56].map(t=>XmobotVelocity.twist(frames[indexAt(t)])[1])};
-    });
-    assert(Math.abs(letter.length-34.65)<.01 && letter.velocityError<.025);
-    assert(Math.hypot(letter.end[0]-letter.start[0],letter.end[1]-letter.start[1])<1e-5);
-    assert(Math.abs(Math.cos(letter.end[2]-letter.start[2])-1)<1e-8);
-    assert.deepEqual(letter.fixedAxle,[true,true]);
-    assert(letter.lateral[0]>.05 && letter.lateral[1]<-.05);
-    await page.locator('#seek').fill('84.8');
-    if(process.env.WATCH_LAP)await page.click('#replay');else await page.click('#play');
-    await page.waitForFunction(()=>viewer.state.time===85 && !viewer.state.playing,null,{timeout:105000});
-    const letterEnd=await page.locator('#panel-a .world').screenshot();
-    await page.selectOption('#routeShape','classic');
-    await page.selectOption('#routeShape','letter');
-    await page.locator('#seek').fill('85');
-    assert(letterEnd.equals(await page.locator('#panel-a .world').screenshot()));
-    await page.selectOption('#routeShape','classic');
     const metrics=await page.evaluate(()=>{
       const {frames,tracks,distance}=XmobotRoute;
       let error=0;
@@ -55,11 +27,31 @@ async function main(){
       }
       return {length:distance.at(-1),end:frames.at(-1).p,error,count:tracks.length};
     });
-    assert(Math.abs(metrics.length-25.22)<.02);
+    assert(Math.abs(metrics.length-29.64)<.02);
     assert(Math.hypot(metrics.end[0],metrics.end[1])<1e-4);
-    assert(Math.abs(metrics.end[2])<1e-4);
+    assert(Math.abs(metrics.end[2]+2*Math.PI)<1e-4);
     assert(metrics.error<.016, String(metrics.error));
     assert.equal(metrics.count,4);
+    const spacing=await page.evaluate(()=>{
+      const {centre,tracks,distance,indexAt}=XmobotRoute, end=indexAt(62);
+      let gap=Infinity,crossings=0;
+      const turn=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+      for(let i=0;i<end;i++)for(let j=i+2;j<end;j++){
+        const a=centre[i],b=centre[i+1],c=centre[j],d=centre[j+1];
+        if(turn(a,b,c)*turn(a,b,d)<0 && turn(c,d,a)*turn(c,d,b)<0)crossings++;
+        const along=distance[j]-distance[i];
+        if(i%3||j%3||Math.min(along,distance[end]-along)<3)continue;
+        if(Math.hypot(a[0]-c[0],a[1]-c[1])>3)continue;
+        for(const l of tracks)for(const r of tracks)
+          gap=Math.min(gap,Math.hypot(l[i][0]-r[j][0],l[i][1]-r[j][1]));
+      }
+      return {gap,crossings};
+    });
+    assert.equal(spacing.crossings,0);
+    assert(spacing.gap>1.15,JSON.stringify(spacing));
+    await page.locator('#seek').fill('26');
+    assert.equal(await page.locator('#value-a').innerText(),'向左斜行');
+
     await page.locator('#seek').fill('19');
     assert.equal(await page.locator('#value-a').innerText(),'向左横移');
     assert(await page.locator('.brand-logo').evaluate(img=>img.complete && img.naturalWidth>0));
@@ -94,8 +86,12 @@ async function main(){
       assert(Math.abs(v[0]-.27)<1e-4 && Math.abs(v[1]-side)<1e-4 && Math.abs(v[2]-.12)<1e-4);
       assert((await page.locator('#velocityPlot').getAttribute('aria-label')).includes(side.toFixed(2)+' m/s'));
     }
-    await page.locator('#seek').fill('69.6');
-    await page.click('#play');
+    if(process.env.WATCH_LAP){
+      await page.click('#replay');
+    }else{
+      await page.locator('#seek').fill('69.6');
+      await page.click('#play');
+    }
     await page.waitForFunction(()=>viewer.state.time===70 && !viewer.state.playing,null,{timeout:85000});
     assert.equal(await page.locator('#value-a').innerText(),'已回到起点');
     const picture=await page.locator('#panel-a .world').screenshot();
@@ -112,10 +108,13 @@ async function main(){
     await page.emulateMedia({reducedMotion:'reduce'});
     await page.setViewportSize({width:390,height:844});
     await page.reload();
-    assert.equal(await page.locator('#clock').innerText(),'0.0 / 85 s');
+    assert.equal(await page.locator('#clock').innerText(),'0.0 / 70 s');
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     await page.goto(url+'#compound');
     await page.waitForFunction(()=>viewer.state.time===53.5 && !viewer.state.playing);
+    await page.goto(url+'#letter');
+    await page.waitForFunction(()=>location.hash==='#classic' && viewer.state.tab==='route');
+    assert.equal(await page.locator('#routeShape').count(),0);
     await page.goto(url+'#kinematics');
     await page.locator('#calc-a math').first().waitFor();
     assert.deepEqual(errors,[]);

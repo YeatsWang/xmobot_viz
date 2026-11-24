@@ -4,9 +4,7 @@
 
 [Open the interactive configurator](https://yeatswang.github.io/xmobot_viz/) · [Xmobot ROS model](https://github.com/YeatsWang/xmobot)
 
-Xmobot is a configurable, extensible mobile robot model. X stands for its many possible configurations. Mobot stands for mobile robot. The default [letter X route](https://yeatswang.github.io/xmobot_viz/#letter) traces the four arms of Xmobot’s initial in one closed stroke. The 4WISD chassis covers 34.7 m in 85 seconds, including the final pivot. Front Ackermann steering draws the lower-right tip and rear Ackermann steering draws the next inside corner. On the following diagonal the chassis turns while its centre travels in a straight line. The four wheel tracks stay visible at the finish.
-
-Choose **Classic circuit / 经典运动环线** to replay the original 70-second route, or jump to its [combined translation and rotation](https://yeatswang.github.io/xmobot_viz/#compound) segment. Both routes use the same wheel model and body-frame velocity display.
+Xmobot is a configurable, extensible mobile robot model. X stands for its many possible configurations. Mobot stands for mobile robot. The viewer opens with a [70-second, 29.6 m classic circuit](https://yeatswang.github.io/xmobot_viz/#classic) driven by a four-wheel independent steering and driving (4WISD) configuration. Follow the robot through a sweeping right turn, leftward and diagonal travel, a front-Ackermann right turn, a rear-Ackermann left turn, a segment of combined translation and rotation, and a final pivot. The return follows a separate S-bend, leaving space between the outbound and inbound tracks. The four wheel tracks stay on the ground when the robot returns to its starting pose. During [combined translation and rotation](https://yeatswang.github.io/xmobot_viz/#compound), the lateral velocity reverses while the chassis continues to yaw left. The body-frame diagram shows forward and lateral velocity in m/s and yaw rate in rad/s.
 
 Choose **Motion comparison / 运动对比** to compare individual motions, or **Mechanical layout / 机械配置** to build and export your own Xmobot.
 
@@ -46,7 +44,6 @@ The release check downloads 20 URDFs from the page, covering five drivetrains, a
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium
 python3 tools/build_route.py
-python3 tools/build_letter.py
 node test/route.cjs
 node test/motion.cjs
 node test/downloads.cjs

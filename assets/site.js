@@ -115,54 +115,29 @@ $('play').onclick=()=>{set({playing:!state.playing,time:state.time>=viewer.durat
 $('replay').onclick=()=>set({playing:true,time:0});
 $('seek').oninput=e=>set({time:Number(e.target.value),playing:false});
 $('lang').onclick=()=>{set({english:!state.english});update();};
-let lap=XmobotRoute,mapScale,mapTracks;
+const lap=XmobotRoute;
+const [[xmin,xmax],[ymin,ymax]]=lap.extent;
+const mapScale=Math.min(222/(xmax-xmin),150/(ymax-ymin));
 const mapPoint=([x,y])=>[126+(x-lap.midpoint[0])*mapScale,90-(y-lap.midpoint[1])*mapScale];
-function prepareMap(){
- const [[xmin,xmax],[ymin,ymax]]=lap.extent;
- mapScale=Math.min(222/(xmax-xmin),150/(ymax-ymin));
-
- function mapShape(points){
-  return points.filter((_,i)=>i%3===0||i===points.length-1).map((p,i)=>
-    (i?'L':'M')+mapPoint(p).map(v=>v.toFixed(2)).join(' ')).join(' ');
- }
- $('mapPlan').setAttribute('d',mapShape(lap.centre));
- $('mapTracks').replaceChildren();
- mapTracks=lap.tracks.map(points=>{
-  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-  path.setAttribute('d',mapShape(points));path.setAttribute('pathLength','1');$('mapTracks').append(path);
-  const lengths=[0];
-  for(let i=1;i<points.length;i++)lengths.push(lengths[i-1]+Math.hypot(points[i][0]-points[i-1][0],points[i][1]-points[i-1][1]));
-  return {path,lengths};
- });
- const [startX,startY]=mapPoint(lap.centre[0]);
- $('mapStart').setAttribute('cx',startX);$('mapStart').setAttribute('cy',startY);
+function mapShape(points){
+ return points.filter((_,i)=>i%3===0||i===points.length-1).map((p,i)=>
+   (i?'L':'M')+mapPoint(p).map(v=>v.toFixed(2)).join(' ')).join(' ');
 }
-prepareMap();
-function chooseRoute(id){
- lap=window.XmobotRoute=XmobotRoutes[id];
- $('routeShape').value=id;
- savedLap=null;delete $('velocityPlot').dataset.frame;
- prepareMap();set({time:0,playing:!matchMedia('(prefers-reduced-motion: reduce)').matches});
-}
-$('routeShape').onchange=e=>chooseRoute(e.target.value);
-const letterNotes=[
- ['车头朝向不变，四轮平行横移，沿右上斜边起笔。','All wheels steer in parallel to open the upper-right stroke sideways.'],
- ['经过端部时，各轮连续调整转角，车身沿圆弧调头。','The wheel angles change continuously around the first rounded tip.'],
- ['四轮平行偏转，车身保持朝向，沿斜边返回。','The wheels roll in parallel at an angle while the chassis holds its heading.'],
- ['从斜边转入凹角，接上字母的右下笔画。','The inside corner connects the two right-hand arms.'],
- ['右下端部由前轮转向，后轮保持正向。','The front wheels steer around the lower-right tip while the rear wheels stay straight.'],
- ['下方凹角由后轮转向，前轮保持正向。','The rear wheels steer through the lower inside corner while the front wheels stay straight.'],
- ['沿左下斜边直行，再绕过端部。','The robot follows the lower-left arm to its rounded tip.'],
- ['车心沿斜线前进，车身向左转，侧向速度由正变负。','The centre follows a straight diagonal while the chassis turns left and lateral velocity changes sign.'],
- ['在左侧凹角改变行进方向，驶向最后一个端部。','The robot turns at the left inside corner toward the last tip.'],
- ['绕过左上端部，沿斜边和最后一个凹角回到起点。','The upper-left tip, diagonal and last inside corner complete the outline.'],
- ['车心留在起点，四轮原地回转至出发朝向。','The chassis pivots at the start point to recover its initial heading.']
-];
+$('mapPlan').setAttribute('d',mapShape(lap.centre));
+const mapTracks=lap.tracks.map(points=>{
+ const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+ path.setAttribute('d',mapShape(points));path.setAttribute('pathLength','1');$('mapTracks').append(path);
+ const lengths=[0];
+ for(let i=1;i<points.length;i++)lengths.push(lengths[i-1]+Math.hypot(points[i][0]-points[i-1][0],points[i][1]-points[i-1][1]));
+ return {path,lengths};
+});
+const [startX,startY]=mapPoint(lap.centre[0]);
+$('mapStart').setAttribute('cx',startX);$('mapStart').setAttribute('cy',startY);
 const phaseNotes=[
  ['四个舵轮朝前，以相同速度滚动。','All four wheels point forward and roll at the same speed.'],
  ['前轮向右、后轮向左，四个轮心分别沿弧线运动。','Front wheels steer right and rear wheels left. Each wheel centre follows its own arc.'],
  ['四轮平行向左，车身横移时保持航向。','All wheels roll left in parallel while the chassis holds its heading.'],
- ['四轮朝右前方滚动，航向保持不变。','All wheels roll diagonally forward and right with a fixed heading.'],
+ ['四轮朝左前方滚动，航向保持不变。','All wheels roll diagonally forward and left with a fixed heading.'],
  ['前轮向右偏转，后轮保持正向，车头向右转。','The front wheels steer right, the rear wheels stay straight and the chassis turns right.'],
  ['前轮保持正向，后轮向右偏转，车头向左转。','The front wheels stay straight and the rear wheels steer right, turning the chassis left.'],
  ['前进中，侧向速度由左变右，同时车头向左转动。','During forward travel, lateral velocity changes from left to right while the chassis yaws left.'],
@@ -179,7 +154,7 @@ function syncRoute(){
  }
  const [px,py]=mapPoint([x,y]), total=lap.distance.at(-1);
  const phase=lap.stages.findLast(([start])=>state.time>=start);
- const explanation=(lap.id==='letter'?letterNotes:phaseNotes)[lap.stages.indexOf(phase)][state.english?1:0];
+ const explanation=phaseNotes[lap.stages.indexOf(phase)][state.english?1:0];
  if($('lapExplanation').textContent!==explanation)$('lapExplanation').textContent=explanation;
  $('value-a').textContent=state.time>=lap.duration?word('已回到起点','Lap complete'):phase[state.english?2:1];
  $('lapDistance').textContent=lap.distance[index].toFixed(1)+' / '+total.toFixed(1)+' m';
@@ -270,11 +245,12 @@ function update(){
 }
 function openComparison(){
  const key=location.hash.slice(1);
- if(key==='letter'||key==='classic'){
-   switchTab('route');chooseRoute(key);document.querySelector('.lab').scrollIntoView();return;
+ if(key==='classic'||key==='letter'){
+   if(key==='letter')history.replaceState(null,'','#classic');
+   switchTab('route');document.querySelector('.lab').scrollIntoView();return;
  }
  if(key==='compound'){
-   switchTab('route');chooseRoute('classic');set({time:lap.compoundAt,playing:!matchMedia('(prefers-reduced-motion: reduce)').matches});document.querySelector('.lab').scrollIntoView();return;
+   switchTab('route');set({time:lap.stages[6][0],playing:!matchMedia('(prefers-reduced-motion: reduce)').matches});document.querySelector('.lab').scrollIntoView();return;
  }
  if(key==='route'||key==='kinematics'){
    switchTab(key==='route'?'route':'motion');(key==='route'?document.querySelector('.lab'):$('kinematics')).scrollIntoView();return;
