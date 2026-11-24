@@ -4,7 +4,7 @@
 
 [Open the interactive configurator](https://yeatswang.github.io/xmobot_viz/) · [Xmobot ROS model](https://github.com/YeatsWang/xmobot)
 
-Xmobot is a configurable, extensible mobile robot model. X stands for its many possible configurations. Mobot stands for mobile robot. The viewer opens with a 70-second, 25.2 m lap driven by a four-wheel independent steering and driving (4WISD) configuration. Follow the robot through a sweeping right turn, leftward and diagonal travel, a front-Ackermann right turn, a rear-Ackermann left turn, a leaf sway (柳叶飘), and a final pivot. The four wheel tracks stay on the ground when the robot returns to its starting pose. Use the timeline to revisit any part of the lap.
+Xmobot is a configurable, extensible mobile robot model. X stands for its many possible configurations. Mobot stands for mobile robot. The viewer opens with a 70-second, 25.2 m lap driven by a four-wheel independent steering and driving (4WISD) configuration. Follow the robot through a sweeping right turn, leftward and diagonal travel, a front-Ackermann right turn, a rear-Ackermann left turn, a segment of combined translation and rotation, and a final pivot. The four wheel tracks stay on the ground when the robot returns to its starting pose. During [combined translation and rotation](https://yeatswang.github.io/xmobot_viz/#compound), the lateral velocity reverses while the chassis continues to yaw left. The body-frame diagram shows forward and lateral velocity in m/s and yaw rate in rad/s.
 
 Choose **Motion comparison / 运动对比** to compare individual motions, or **Mechanical layout / 机械配置** to build and export your own Xmobot.
 

@@ -25,7 +25,7 @@ def schedule(straight, lateral, spin):
         (30.2, 40.8, (.44, -.30 * .25, -.30)),
         # For rear steering vy = -omega*L/2 keeps the front wheels straight.
         (42.2, 52.9, (.34, -.22 * .25, .22)),
-        # Leaf sway: forward travel and a gentle yaw continue while lateral speed
+        # Combined translation and rotation: forward travel and yaw continue while lateral speed
         # changes sign. Finish tangent to the chassis heading at the starting point.
         (54.15, 55.3, (.27, .17, .12)),
         (57.45, 58.55, (.27, -.17, .12)),

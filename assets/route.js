@@ -10,7 +10,7 @@
     [13,'向左横移','Translate left'], [21,'向右斜行','Diagonal right'],
     [29.5,'前轮阿克曼 · 右转','Front Ackermann · right turn'],
     [41.5,'后轮阿克曼 · 左转','Rear Ackermann · left turn'],
-    [53.5,'柳叶飘','Leaf sway'], [62,'原地回转','Centre pivot']
+    [53.5,'平移与转动的复合运动','Combined translation and rotation'], [62,'原地回转','Centre pivot']
   ];
   const centre = frames.map(({p}) => [p[0], p[1]]);
   const tracks = [[.25,.2],[.25,-.2],[-.25,.2],[-.25,-.2]].map(([cx,cy]) =>

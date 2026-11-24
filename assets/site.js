@@ -133,10 +133,29 @@ const mapTracks=lap.tracks.map(points=>{
 });
 const [startX,startY]=mapPoint(lap.centre[0]);
 $('mapStart').setAttribute('cx',startX);$('mapStart').setAttribute('cy',startY);
+const phaseNotes=[
+ ['四个舵轮朝前，以相同速度滚动。','All four wheels point forward and roll at the same speed.'],
+ ['前轮向右、后轮向左，四个轮心分别沿弧线运动。','Front wheels steer right and rear wheels left. Each wheel centre follows its own arc.'],
+ ['四轮平行向左，车身横移时保持航向。','All wheels roll left in parallel while the chassis holds its heading.'],
+ ['四轮朝右前方滚动，航向保持不变。','All wheels roll diagonally forward and right with a fixed heading.'],
+ ['前轮向右偏转，后轮保持正向，车头向右转。','The front wheels steer right, the rear wheels stay straight and the chassis turns right.'],
+ ['前轮保持正向，后轮向右偏转，车头向左转。','The front wheels stay straight and the rear wheels steer right, turning the chassis left.'],
+ ['前进中，侧向速度由左变右，同时车头向左转动。','During forward travel, lateral velocity changes from left to right while the chassis yaws left.'],
+ ['车心停在起点，各轮沿圆周切线滚动，将车头转回初始方向。','The centre stays at the start point. The wheels roll tangentially to turn the chassis back to its initial heading.']
+];
 function syncRoute(){
  const index=lap.indexAt(state.time),[x,y,yaw]=lap.frames[index].p;
+ const plot=$('velocityPlot'),g=plot.getContext('2d'),frame=lap.frames[index];
+ if(plot.dataset.frame!==String(index)||plot.dataset.lang!==String(state.english)){
+   g.clearRect(0,0,plot.width,plot.height);XmobotVelocity.draw(g,frame,0,0,plot.width,plot.height,state.english);
+   const [vx,vy,w]=XmobotVelocity.twist(frame).map(v=>v.toFixed(2));
+   plot.setAttribute('aria-label',word('车身坐标系速度','Body-frame velocity')+' · vx '+vx+' m/s · vy '+vy+' m/s · ω '+w+' rad/s');
+   plot.dataset.frame=index;plot.dataset.lang=state.english;
+ }
  const [px,py]=mapPoint([x,y]), total=lap.distance.at(-1);
  const phase=lap.stages.findLast(([start])=>state.time>=start);
+ const explanation=phaseNotes[lap.stages.indexOf(phase)][state.english?1:0];
+ if($('lapExplanation').textContent!==explanation)$('lapExplanation').textContent=explanation;
  $('value-a').textContent=state.time>=lap.duration?word('已回到起点','Lap complete'):phase[state.english?2:1];
  $('lapDistance').textContent=lap.distance[index].toFixed(1)+' / '+total.toFixed(1)+' m';
  for(const {path,lengths} of mapTracks)path.setAttribute('stroke-dasharray',(lengths[index]/lengths.at(-1))+' 1');
@@ -226,6 +245,9 @@ function update(){
 }
 function openComparison(){
  const key=location.hash.slice(1);
+ if(key==='compound'){
+   switchTab('route');set({time:lap.stages[6][0],playing:!matchMedia('(prefers-reduced-motion: reduce)').matches});document.querySelector('.lab').scrollIntoView();return;
+ }
  if(key==='route'||key==='kinematics'){
    switchTab(key==='route'?'route':'motion');(key==='route'?document.querySelector('.lab'):$('kinematics')).scrollIntoView();return;
  }

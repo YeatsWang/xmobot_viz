@@ -56,9 +56,15 @@ async function main(){
     assert.equal(maneuvers.front,12);assert.equal(maneuvers.rear,12);
     assert(maneuvers.sway[0]>.15 && maneuvers.sway[1]<-.15);
     assert(Math.hypot(...maneuvers.arrival)<1e-4);
-    for(const [time,label] of [[35,'前轮阿克曼 · 右转'],[47,'后轮阿克曼 · 左转'],[56,'柳叶飘']]){
+    for(const [time,label] of [[35,'前轮阿克曼 · 右转'],[47,'后轮阿克曼 · 左转'],[56,'平移与转动的复合运动']]){
       await page.locator('#seek').fill(String(time));
       assert.equal(await page.locator('#value-a').innerText(),label);
+    }
+    for(const [t,side] of [[55,.17],[58,-.17]]){
+      await page.locator('#seek').fill(String(t));
+      const v=await page.evaluate(()=>XmobotVelocity.twist(XmobotRoute.frames[XmobotRoute.indexAt(viewer.state.time)]));
+      assert(Math.abs(v[0]-.27)<1e-4 && Math.abs(v[1]-side)<1e-4 && Math.abs(v[2]-.12)<1e-4);
+      assert((await page.locator('#velocityPlot').getAttribute('aria-label')).includes(side.toFixed(2)+' m/s'));
     }
     if(process.env.WATCH_LAP){
       await page.click('#replay');
@@ -84,6 +90,8 @@ async function main(){
     await page.reload();
     assert.equal(await page.locator('#clock').innerText(),'0.0 / 70 s');
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await page.goto(url+'#compound');
+    await page.waitForFunction(()=>viewer.state.time===53.5 && !viewer.state.playing);
     await page.goto(url+'#kinematics');
     await page.locator('#calc-a math').first().waitFor();
     assert.deepEqual(errors,[]);
